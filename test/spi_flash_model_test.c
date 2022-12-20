@@ -46,7 +46,7 @@ int main ()
     /* entry message */
     printf("INFO:%s: unit test started\n", __FUNCTION__);
 
-    /* sfcb_init */
+    /* sfm_init */
     printf("INFO:%s: sfm_init\n", __FUNCTION__);
     if ( 0 != sfm_init( &spiFlash, "W25q16JV" ) ) {
         printf("ERROR:%s:sfm_init\n", __FUNCTION__);
