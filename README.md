@@ -31,7 +31,7 @@ application would this packet sent to the SPI instead.
 
 ## How to use
 
-The [unittest](./spi_flash_model_test.c) gives a good flavor how to use the model.
+The [unittest](./test/spi_flash_model_test.c) gives a good flavor how to use the model.
 
 ### API
 
