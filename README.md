@@ -2,7 +2,7 @@
 
 # SPI-Flash-Model
 
-Arbitrary C model of an SPI Flash.
+Arbitrary SPI Flash C model.
 
 
 ## Features
