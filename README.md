@@ -1,3 +1,4 @@
+[![Test](https://github.com/akaeba/spi_flash_model/workflows/test/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/test.yml)
 
 
 # SPI-Flash-Model
