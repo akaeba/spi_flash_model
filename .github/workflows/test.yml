@@ -1,0 +1,40 @@
+# ************************************************************************
+#  @author:     Andreas Kaeberlein
+#  @copyright:  Copyright 2022
+#  @credits:    AKAE
+#
+#  @license:    BSDv3
+#  @maintainer: Andreas Kaeberlein
+#  @email:      andreas.kaeberlein@web.de
+#
+#  @file:       test.yml
+#  @date:       2022-12-20
+#
+#  @brief:      CI Job for build and run unit test
+#
+# ************************************************************************
+
+
+name: test
+
+on:
+  push:
+    paths-ignore:
+      - 'doc/**'
+      - 'README.md'
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Werror
+        run: |
+          make ci
+          make clean
+      - name: Unittest
+        run: |
+          make && ./test/spi_flash_model_test
