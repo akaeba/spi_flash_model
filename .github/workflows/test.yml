@@ -31,10 +31,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+      - name: OS Version
+        run: cat /etc/os-release
       - name: Build Werror
-        run: |
-          make ci
-          make clean
+        run: make ci && make clean
       - name: Unittest
-        run: |
-          make && ./test/spi_flash_model_test
+        run: make && ./test/spi_flash_model_test
+          
