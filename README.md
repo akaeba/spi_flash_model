@@ -56,7 +56,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop);
 
 #### SFM (Spi Flash Model)
 
-Access SPI Flash memory. SPI request and response is placed in the same SPI buffer variable.
+Access SPI Flash memory. SPI request and response are placed in the same SPI buffer variable.
 
 ```c
 int sfm (t_sfm *self, uint8_t* spi, uint32_t len);
