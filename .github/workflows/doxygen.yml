@@ -33,5 +33,6 @@ jobs:
         uses: actions/checkout@v3
       - name: Run Doxygen
         run: |
+          doxygen --version
           pwd
           ls .
