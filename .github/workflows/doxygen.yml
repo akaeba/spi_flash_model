@@ -31,8 +31,14 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
+      - name: Prepare Dirs
+        run: |
+          mkdir -p ./doxygen/work
+          mkdir -p ./doxygen/out
       - name: Run Doxygen
         run: |
           doxygen --version
+          pdflatex --version
+          doxygen ./doxygen/Doxyfile
           pwd
           ls .
