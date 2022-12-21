@@ -44,3 +44,4 @@ jobs:
           (cd ./doxygen/out/latex && make)  # build pdf without path change
           mv ./doxygen/out/latex/refman.pdf ./refman.pdf    # move to top
           ls -la .
+          echo ${{ github.event.repository.name }}
