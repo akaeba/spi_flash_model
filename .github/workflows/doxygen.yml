@@ -11,6 +11,7 @@
 #  @date:       2022-12-21
 #
 #  @see:        https://yonatankra.com/2-ways-to-use-your-docker-image-in-github-actions/
+#  @see:        https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
 #  @brief:      Runs Doxygen and pdf build
 #
 # ************************************************************************
@@ -42,6 +43,11 @@ jobs:
         run: |
           pdflatex --version
           (cd ./doxygen/out/latex && make)  # build pdf without path change
-          mv ./doxygen/out/latex/refman.pdf ./refman.pdf    # move to top
+          mv ./doxygen/out/latex/refman.pdf ./${{ github.event.repository.name }}_ug.pdf    # move to top
           ls -la .
-          echo ${{ github.event.repository.name }}
+#      - name: 'Upload Artifact'
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: my-artifact
+#          path: my_file.txt
+#          retention-days: 5
