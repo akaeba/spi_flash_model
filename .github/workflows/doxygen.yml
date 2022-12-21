@@ -37,7 +37,9 @@ jobs:
       - name: Run Doxygen
         run: |
           doxygen --version
-          pdflatex --version
           doxygen ./doxygen/Doxyfile
-          cd ./doxygen/out
+      - name: Run Latex
+        run: |
+          pdflatex --version
+          ls ./doxygen/out
           ls .
