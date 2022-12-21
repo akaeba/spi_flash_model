@@ -41,5 +41,9 @@ jobs:
       - name: Run Latex
         run: |
           pdflatex --version
+          cd ./latex
+          pwd
+          ls .
+          echo "Test"
           ls ./doxygen/out
           ls .
