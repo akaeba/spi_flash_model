@@ -44,7 +44,6 @@ jobs:
           pdflatex --version
           (cd ./doxygen/out/latex && make)  # build pdf without path change
           mv ./doxygen/out/latex/refman.pdf ./${{ github.event.repository.name }}_ug.pdf    # move to top
-          ls -la .
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
