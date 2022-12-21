@@ -1,5 +1,4 @@
-[![Test](https://github.com/akaeba/spi_flash_model/workflows/test/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/test.yml)
-
+[![Test](https://github.com/akaeba/spi_flash_model/workflows/test/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/test.yml) [![Doxygen](https://github.com/akaeba/spi_flash_model/workflows/doxygen/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/doxygen.yml)
 
 # SPI-Flash-Model
 
