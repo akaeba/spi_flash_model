@@ -1,0 +1,37 @@
+# ************************************************************************
+#  @author:     Andreas Kaeberlein
+#  @copyright:  Copyright 2022
+#  @credits:    AKAE
+#
+#  @license:    BSDv3
+#  @maintainer: Andreas Kaeberlein
+#  @email:      andreas.kaeberlein@web.de
+#
+#  @file:       doxygen.yml
+#  @date:       2022-12-21
+#
+#  @see:        https://yonatankra.com/2-ways-to-use-your-docker-image-in-github-actions/
+#  @brief:      Runs Doxygen and pdf build
+#
+# ************************************************************************
+
+
+name: doxygen
+
+on:
+  push:
+    paths-ignore:
+      - 'doc/**'
+      - 'README.md'
+
+jobs:
+  doxygen:
+    runs-on: ubuntu-latest
+    container: dolphinics/doxygen:latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Run Doxygen
+        run: |
+          pwd
+          ls .
