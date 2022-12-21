@@ -44,6 +44,8 @@ jobs:
           cd ./doxygen/out/latex
           make  # build pdf
           ls -la .
+          echo "~"
           cd ~
-          mv ./doxygen/out/latex/refman.pdf ./refman.pdf
+          pwd
+          #mv ./doxygen/out/latex/refman.pdf ./refman.pdf
           ls .
