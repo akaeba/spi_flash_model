@@ -42,8 +42,6 @@ jobs:
         run: |
           pdflatex --version
           cd ./doxygen/out/latex
-          pwd
+          ./Makefile
           ls .
           echo "Test"
-          ls ./doxygen/out
-          ls .
