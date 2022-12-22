@@ -12,6 +12,7 @@
 #
 #  @see:        https://yonatankra.com/2-ways-to-use-your-docker-image-in-github-actions/
 #  @see:        https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
+#  @see:        https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#patterns-to-match-branches-and-tags
 #  @brief:      Runs Doxygen and pdf build
 #
 # ************************************************************************
@@ -21,9 +22,8 @@ name: doxygen
 
 on:
   push:
-    paths-ignore:
-      - 'doc/**'
-      - 'README.md'
+    tags:        
+      - '**'    # '**' 	Matches all branch and tag names.
 
 jobs:
   doxygen:
@@ -49,4 +49,4 @@ jobs:
         with:
           name: Userguide
           path: ${{ github.event.repository.name }}_ug.pdf
-          retention-days: 1
+          retention-days: 400
