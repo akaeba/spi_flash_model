@@ -43,10 +43,10 @@ jobs:
         run: |
           pdflatex --version
           (cd ./doxygen/out/latex && make)  # build pdf without path change
-          mv ./doxygen/out/latex/refman.pdf ./${{ github.event.repository.name }}_ug.pdf    # move to top
+          mv ./doxygen/out/latex/refman.pdf ./${{github.event.repository.name}}_ug-${{github.ref_name}}.pdf    # move to top
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: Userguide
-          path: ${{ github.event.repository.name }}_ug.pdf
+          name: Userguide-${{github.ref_name}}
+          path: ${{github.event.repository.name}}_ug-${{github.ref_name}}.pdf
           retention-days: 400
