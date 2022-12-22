@@ -30,7 +30,7 @@ jobs:
         os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout
+      - uses: actions/checkout@v3
       - name: OS Version
         run: cat /etc/os-release
       - name: Build Werror
