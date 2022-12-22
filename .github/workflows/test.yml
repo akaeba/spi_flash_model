@@ -37,4 +37,3 @@ jobs:
         run: make ci && make clean
       - name: Unittest
         run: make && ./test/spi_flash_model_test
-          
