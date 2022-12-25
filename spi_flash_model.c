@@ -79,6 +79,23 @@ static uint32_t sfm_spi_to_adr (uint8_t* vals, uint8_t len)
 
 
 /**
+ *  sfm_adr_digits
+ *    determine number of digits for full address
+ */
+static uint8_t sfm_adr_digits (uint32_t adr)
+{
+    /** variables **/
+    char charHexAdr[10];    // adr converted to hexadecimal address
+
+    /* determine number of digits for hex address */
+    charHexAdr[0] = '\0';   // empty string
+    snprintf( charHexAdr, sizeof(charHexAdr)/sizeof(charHexAdr[0]), "%x", adr );
+    return ((uint8_t) strlen(charHexAdr));  // zero padding at lower addresses
+}
+
+
+
+/**
  *  sfm_init
  *    initializes spi flash model handle
  */
@@ -123,7 +140,6 @@ int sfm_init (t_sfm *self, char flashType[])
 int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
 {
     /** Variables **/
-    char        charHexAdr[10]; // flash address as ascii hex
     uint8_t     uint8AdrDigits; // digits of hex address
     uint32_t    uint32Start;    // stop address
     uint32_t    uint32Stop;     // start address
@@ -145,11 +161,8 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
     }
 
     /* determine number of hex digits for full address */
-    charHexAdr[0] = '\0';   // empty string
-    snprintf( charHexAdr, sizeof(charHexAdr)/sizeof(charHexAdr[0]), "%x", SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte );
-    uint8AdrDigits = (uint8_t) strlen(charHexAdr);  // zero padding at lower addresses
+    uint8AdrDigits = sfm_adr_digits( SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte );
     if ( 0 != self->uint8MsgLevel ) {
-        printf("  INFO:%s: charHexAdr     = %s\n", __FUNCTION__, charHexAdr);
         printf("  INFO:%s: uint8AdrDigits = %d\n", __FUNCTION__, uint8AdrDigits);
     }
 
@@ -174,7 +187,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
     /* dump flash to console */
     for ( uint32_t i = uint32Start; i < uint32Stop; i += 16 ) {
         /* address */
-        printf("%0*x   ", uint8AdrDigits, i);   // memory address
+        printf("%0*x:   ", uint8AdrDigits, i);  // memory address
         /* 16 byte per row */
         for ( uint32_t j = 0; j < 16; j++ ) {
             /* hex number */
@@ -185,6 +198,92 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
             }
         }
         printf("\n");   // new row
+    }
+
+    /* finish function */
+    return 0;
+}
+
+
+
+/**
+ *  sfm_store
+ *    stores spi flash memory into file
+ *    .dif -> difference to empty flash, full initialized with 0xff
+ */
+int sfm_store (t_sfm *self, char fileName[])
+{
+    /** Variables **/
+    char*       charPtrFileExt;     // pointer to file extension
+    char        line[128];          // buffer line
+    char        charHex[5];         // hex digit
+    uint32_t    i, j;               // iterator
+    FILE*       fp;                 // file pointer
+    uint8_t     uint8AdrDigits;     // number of address digits
+
+
+    /* Function Call Message */
+    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+
+    /* flash type selected */
+    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+        printf("  ERROR:%s: no flash selected\n", __FUNCTION__);
+        return 1;
+    }
+
+    /* memory allocated */
+    if ( NULL == self->uint8PtrMem ) {
+        printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__);
+        return 2;
+    }
+
+    /* determine number of digits for address output */
+    uint8AdrDigits = sfm_adr_digits( SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte );
+
+    /* check desired file extension */
+    charPtrFileExt = strrchr(fileName, '.') + 1;
+    /* no file extsnion */
+    if ( !charPtrFileExt ) {
+        printf("  ERROR:%s: No file name\n", __FUNCTION__);
+        return 4;
+
+    /* dif extension */
+    } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
+        /* entry message */
+        printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt);
+        /* open file for write */
+        fp = fopen(fileName, "w+");
+        if ( NULL == fp ) {
+            printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName);
+            return 8;
+        }
+        /* iterate over array in multiples of 16 */
+        for ( i = 0; i < SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte; i += 16 ) {
+            /* data write out required? */
+            for ( j = 0; j < 16; j++ ) {    // check for non empty fields
+                if ( 0xff != self->uint8PtrMem[i+j] ) {
+                    break;  // write out data line
+                }
+            }
+            if ( j >= 16 ) {
+                continue;   // go one with next 16 data bytes
+            }
+            /* write out data */
+            line[0] = '\0'; // empty line
+            snprintf( line, sizeof(line)/sizeof(line[0]), "%0*x:", uint8AdrDigits, i ); // write address to buffer line
+            for ( j = 0; j < 16; j++ ) {
+                charHex[0] = '\0';  // empty
+                snprintf( charHex, sizeof(charHex)/sizeof(charHex[0]), " %02x", self->uint8PtrMem[i+j] );   // convert to ascii
+                strncat( line, charHex, sizeof(line)/sizeof(line[0]) - strlen(line) - 1 );  // overflow save cat
+            }
+            fprintf( fp, "%s\n", line );    // file write
+        }
+        fclose(fp); // close file handle
+
+    /* Unknown file extension */
+    } else {
+        printf("  ERROR:%s: unsuppored file type '%s'\n", __FUNCTION__, charPtrFileExt);
+        return 8;
     }
 
     /* finish function */

@@ -119,6 +119,26 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop);
 
 
 /**
+ *  @brief store
+ *
+ *  stores spi flash memory into file
+ *
+ *  @param[in,out]  self                handle
+ *  @param[in]      fileName            file name for save
+ *  @return         int                 state
+ *  @retval         0                   OKAY
+ *  @retval         1                   no flash selected
+ *  @retval         2                   no memory allocated
+ *  @retval         4                   no file name provided
+ *  @retval         8                   failed to open file
+ *  @since          2022-12-25
+ *  @author         Andreas Kaeberlein
+ */
+int sfm_store (t_sfm *self, char fileName[]);
+
+
+
+/**
  *  @brief access flash
  *
  *  interacts with flash model

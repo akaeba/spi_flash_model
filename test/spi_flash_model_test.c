@@ -23,9 +23,7 @@
 #include <stdint.h>     // defines fixed data types: int8_t...
 #include <stddef.h>     // various variable types and macros: size_t, offsetof, NULL, ...
 #include <string.h>     // string operation: memset, memcpy
-#include <unistd.h>     // system call wrapper functions such as fork, pipe and I/O primitives (read, write, close, etc.).
-#include <fcntl.h>      // manipulate file descriptor
-#include <ctype.h>      // used for testing and mapping characters
+#include <strings.h>    // strcasecmp
 /* Self */
 #include "spi_flash_model.h"    // function prototypes
 
@@ -38,9 +36,12 @@
 int main ()
 {
     /** Variables **/
-    t_sfm       spiFlash;   // handle to SPI Flash
-    uint8_t     spi[1024];  // spi buffer
-    uint32_t    spiLen;     // spiLen
+    t_sfm       spiFlash;       // handle to SPI Flash
+    uint8_t     spi[1024];      // spi buffer
+    uint32_t    spiLen;         // spiLen
+    FILE        *fp;            // file handle
+    size_t      len = 0;        // line length
+    char        *line = NULL;   // buffer line
 
 
     /* entry message */
@@ -188,6 +189,23 @@ int main ()
         goto ERO_END;
     }
     sfm_dump( &spiFlash, 0x1010, 0x1040 );
+
+    /* sfm_store */
+    printf("INFO:%s:sfm_store\n", __FUNCTION__);
+    if ( 0 != sfm_store(&spiFlash, "./flash.dif") ) {
+        printf("ERROR:%s:sfm_store: Failed to write file\n", __FUNCTION__);
+        goto ERO_END;
+    }
+    fp = fopen("./flash.dif", "r"); // open file for read
+    if ( NULL == fp ) {
+        printf("ERROR:%s:sfm_store: Failed to open file for read\n", __FUNCTION__);
+        goto ERO_END;
+    }
+    if ( getline(&line, &len, fp) ) {}; // read first line from file
+    if ( 0 != strcasecmp(line, "001020: 01 23 45 67 ff ff ff ff ff ff ff ff ff ff ff ff\n") ) {
+        printf("ERROR:%s:sfm_store: wrong values in file '%s'\n", __FUNCTION__, line);
+        goto ERO_END;
+    }
 
     /* gracefull end */
     printf("INFO:%s: Module test SUCCESSFUL :-)\n", __FUNCTION__);
