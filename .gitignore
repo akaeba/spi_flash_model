@@ -8,3 +8,9 @@
 /**/*.asm
 /**/*.c.o
 #
+
+# Project
+#
+*.dif
+!/test/flash_read.dif
+#
