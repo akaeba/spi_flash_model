@@ -54,6 +54,26 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop);
 ```
 
 
+#### Store
+
+Stores flash model internal data buffer as file. Supported formats:
+* .dif : difference to empty flash ```0xff``` in ascii-hex format
+
+```c
+int sfm_store (t_sfm *self, char fileName[]);
+```
+
+
+#### Load
+
+Restore flash model internal data buffer from File. Supported formats:
+* .dif : difference to empty flash ```0xff``` in ascii-hex format
+
+```c
+int sfm_load (t_sfm *self, char fileName[]);
+```
+
+
 #### SFM (Spi Flash Model)
 
 Access SPI Flash memory. SPI request and response are placed in the same SPI buffer variable.
