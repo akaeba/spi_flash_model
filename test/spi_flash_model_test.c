@@ -206,8 +206,31 @@ int main ()
         printf("ERROR:%s:sfm_store: wrong values in file '%s'\n", __FUNCTION__, line);
         goto ERO_END;
     }
+    /* sfm_load */
+    printf("INFO:%s:sfm_load\n", __FUNCTION__);
+    if ( 0 != sfm_load(&spiFlash, "./test/flash_read.dif") ) {
+        printf("ERROR:%s:sfm_load: Failed to read file\n", __FUNCTION__);
+        goto ERO_END;
+    }
+    /* 00000: 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+       00100: 00 10 20 30 40 50 60 70 80 90 A0 B0 C0 D0 E0 F0
+    */
+    for ( uint8_t i = 0; i < 16; i++ ) {
+        if ( i != spiFlash.uint8PtrMem[i] ) {
+            printf("ERROR:%s:sfm_load: error byte=%x, is=%x, exp=%x\n", __FUNCTION__, i, spiFlash.uint8PtrMem[i], i);
+            sfm_dump( &spiFlash, 0x0, 0x20 );
+            goto ERO_END;
+        }
+    }
+    for ( uint8_t i = 0; i < 16; i++ ) {
+        if ( (i<<4) != spiFlash.uint8PtrMem[0x100+i] ) {
+            printf("ERROR:%s:sfm_load: error byte=%x, is=%x, exp=%x\n", __FUNCTION__, i, spiFlash.uint8PtrMem[i], i);
+            sfm_dump( &spiFlash, 0x90, 0x120 );
+            goto ERO_END;
+        }
+    }
 
-    /* gracefull end */
+    /* graceful end */
     printf("INFO:%s: Module test SUCCESSFUL :-)\n", __FUNCTION__);
     exit(EXIT_SUCCESS);
 
