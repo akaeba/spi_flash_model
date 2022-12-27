@@ -30,9 +30,19 @@
 
 
 
-/**
- *  sfm_asciihex_to_uint8
- *    converts ascii hex string to array of uint8 values
+
+/** @brief sfm_asciihex_to_uint8
+ *
+ *  converts ascii hex string to array of uint8 values
+ *
+ *  @param[in]      asciiHex        string for conversion
+ *  @param[out]     *vals           to numbers converted string input
+ *  @param[out]     *len            number of elements in *vals
+ *  @param[in]      max             maximum number of elements in *vals
+ *  @return         int             state
+ *  @retval         0               OKAY
+ *  @retval         -1              FAIL
+ *
  */
 static int sfm_asciihex_to_uint8 (const char asciiHex[], uint8_t* vals, uint32_t* len, uint32_t max)
 {
@@ -59,9 +69,14 @@ static int sfm_asciihex_to_uint8 (const char asciiHex[], uint8_t* vals, uint32_t
 
 
 
-/**
- *  sfm_spi_to_adr
- *    converts spi packet to 32bit address
+/** @brief sfm_spi_to_adr
+ *
+ *  converts spi packet to 32bit address
+ *
+ *  @param[in]      *vals           spi input packet with flash address
+ *  @param[in]      *len            number of bytes in spi packet
+ *  @return         uint32_t        32bit flash address
+ *
  */
 static uint32_t sfm_spi_to_adr (uint8_t* vals, uint8_t len)
 {
@@ -78,9 +93,13 @@ static uint32_t sfm_spi_to_adr (uint8_t* vals, uint8_t len)
 
 
 
-/**
- *  sfm_adr_digits
- *    determine number of digits for full address
+/** @brief sfm_adr_digits
+ *
+ *  determine number of digits for full address
+ *
+ *  @param[in]      adr             spi flash address
+ *  @return         uint8_t         number of digits in asciihex converted address
+ *
  */
 static uint8_t sfm_adr_digits (uint32_t adr)
 {
@@ -91,6 +110,128 @@ static uint8_t sfm_adr_digits (uint32_t adr)
     charHexAdr[0] = '\0';   // empty string
     snprintf( charHexAdr, sizeof(charHexAdr)/sizeof(charHexAdr[0]), "%x", adr );
     return ((uint8_t) strlen(charHexAdr));  // zero padding at lower addresses
+}
+
+
+
+/** @brief sfm_write_dif
+ *
+ *  write buffer to file in dif format, differences to 0xff default are in 16 bytes lines written out
+ *
+ *  @param[in]      *buf            buffer to write out
+ *  @param[in]      len             number of elements in buffer
+ *  @param[in]      fileName[]      file name to file
+ *  @return         int             state
+ *  @retval         0               OKAY
+ *  @retval         -1              FAIL
+ *
+ */
+static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
+{
+    /** Variables **/
+    char        line[128];          // buffer line
+    char        charHex[5];         // hex digit
+    uint32_t    i, j;               // iterator
+    FILE*       fp;                 // file pointer
+    uint8_t     uint8AdrDigits;     // number of address digits
+
+    /* determine number of hex digits for full address */
+    uint8AdrDigits = sfm_adr_digits( len );
+    /* open file for write */
+    fp = fopen(fileName, "w+");
+    if ( NULL == fp ) {
+        return -1;  // failed to open for write
+    }
+    /* iterate over array in multiples of 16 */
+    for ( i = 0; i < len; i += 16 ) {
+        /* data write out required? */
+        for ( j = 0; j < 16; j++ ) {    // check for non empty fields
+            if ( 0xff != buf[i+j] ) {
+                break;  // write out data line
+            }
+        }
+        if ( j >= 16 ) {
+            continue;   // go one with next 16 data bytes
+        }
+        /* write out data */
+        line[0] = '\0'; // empty line
+        snprintf( line, sizeof(line)/sizeof(line[0]), "%0*x:", uint8AdrDigits, i ); // write address to buffer line
+        for ( j = 0; j < 16; j++ ) {
+            charHex[0] = '\0';  // empty
+            snprintf( charHex, sizeof(charHex)/sizeof(charHex[0]), " %02x", buf[i+j] ); // convert to ascii
+            strncat( line, charHex, sizeof(line)/sizeof(line[0]) - strlen(line) - 1 );  // overflow save cat
+        }
+        fprintf( fp, "%s\n", line );    // file write
+    }
+    fclose(fp); // close file handle
+    /* finish function */
+    return 0;
+}
+
+
+
+/** @brief sfm_read_dif
+ *
+ *  read filt into buffer in dif format
+ *
+ *  @param[in]      *buf            read in buffer
+ *  @param[in]      len             number of elements in buffer
+ *  @param[in]      fileName[]      file name to file
+ *  @return         int             state
+ *  @retval         0               OKAY
+ *  @retval         -1              FAIL
+ *
+ */
+static int sfm_read_dif (uint8_t *buf, uint32_t len, char fileName[])
+{
+    /** Variables **/
+    FILE*       fp;             // file pointer
+    char        *line = NULL;   // read buffer line
+    char        *sep = NULL;    // separated
+    size_t      lineLen = 0;    // number of elements in read buffer
+    uint8_t     vals[16];       // read values in line
+    uint32_t    adr;            // start address
+    uint32_t    i, j;           // iterator
+    int         intTemp;        // helper variable for sscanf
+    int         intNumChr;      // number read chars
+
+    /* open file for read */
+    fp = fopen(fileName, "r");
+    if ( NULL == fp ) {
+        return -1;  // failed to open for read
+    }
+    /* make given buffer empty */
+    memset(buf, 0xff, len);
+    /* read line by line */
+    while( -1 != getline(&line, &lineLen, fp) ) {
+        /* prepare */
+        sep = line; // save anchto for processing
+        intNumChr = 0;
+        /* extract address */
+        sscanf(sep, "%x:%n", &intTemp, &intNumChr);
+        sep += intNumChr;   // go one with next element
+        adr = (uint32_t) intTemp;
+        /* extract data bytes */
+        memset(vals, 0xff, sizeof(vals)/sizeof(vals[0]));   // make empty
+        for ( i = 0; i < sizeof(vals)/sizeof(vals[0]); i++ ) {
+            /* line shorter then expected */
+            if ( 0 == strlen(sep) ) {
+                break;
+            }
+            /* get byte */
+            sscanf(sep, "%x%n", &intTemp, &intNumChr);
+            sep += intNumChr;                       // go one with next element
+            vals[i] = (uint8_t) (intTemp & 0xFF);   // cast to byte
+        }
+        /* check and write to big array */
+        if ( adr + i < len ) {
+            for ( j = 0; j < i; j++ ) {
+                buf[adr+j] = vals[j];
+            }
+        }
+    }
+    /* finish function */
+    return 0;
 }
 
 
@@ -166,7 +307,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
         printf("  INFO:%s: uint8AdrDigits = %d\n", __FUNCTION__, uint8AdrDigits);
     }
 
-    /* process input argguments */
+    /* process input arguments */
     uint32Start = (uint32_t) start;
     uint32Stop = (uint32_t) stop;
     if ( 0 > start ) {
@@ -215,11 +356,6 @@ int sfm_store (t_sfm *self, char fileName[])
 {
     /** Variables **/
     char*       charPtrFileExt;     // pointer to file extension
-    char        line[128];          // buffer line
-    char        charHex[5];         // hex digit
-    uint32_t    i, j;               // iterator
-    FILE*       fp;                 // file pointer
-    uint8_t     uint8AdrDigits;     // number of address digits
 
 
     /* Function Call Message */
@@ -227,66 +363,108 @@ int sfm_store (t_sfm *self, char fileName[])
 
     /* flash type selected */
     if ( (uint32_t) ~0 == self->uint32SelFlash ) {
-        printf("  ERROR:%s: no flash selected\n", __FUNCTION__);
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
 
     /* memory allocated */
     if ( NULL == self->uint8PtrMem ) {
-        printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__);
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
         return 2;
     }
 
-    /* determine number of digits for address output */
-    uint8AdrDigits = sfm_adr_digits( SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte );
-
     /* check desired file extension */
     charPtrFileExt = strrchr(fileName, '.') + 1;
-    /* no file extsnion */
+    /* no file extension */
     if ( !charPtrFileExt ) {
-        printf("  ERROR:%s: No file name\n", __FUNCTION__);
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
         return 4;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
         /* entry message */
-        printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt);
-        /* open file for write */
-        fp = fopen(fileName, "w+");
-        if ( NULL == fp ) {
-            printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName);
+        if ( 0 != self->uint8MsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
+        /* File write */
+        if ( 0 != sfm_write_dif ( self->uint8PtrMem,
+                                  SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
+                                  fileName
+                                )
+        ) {
+            if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
             return 8;
         }
-        /* iterate over array in multiples of 16 */
-        for ( i = 0; i < SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte; i += 16 ) {
-            /* data write out required? */
-            for ( j = 0; j < 16; j++ ) {    // check for non empty fields
-                if ( 0xff != self->uint8PtrMem[i+j] ) {
-                    break;  // write out data line
-                }
-            }
-            if ( j >= 16 ) {
-                continue;   // go one with next 16 data bytes
-            }
-            /* write out data */
-            line[0] = '\0'; // empty line
-            snprintf( line, sizeof(line)/sizeof(line[0]), "%0*x:", uint8AdrDigits, i ); // write address to buffer line
-            for ( j = 0; j < 16; j++ ) {
-                charHex[0] = '\0';  // empty
-                snprintf( charHex, sizeof(charHex)/sizeof(charHex[0]), " %02x", self->uint8PtrMem[i+j] );   // convert to ascii
-                strncat( line, charHex, sizeof(line)/sizeof(line[0]) - strlen(line) - 1 );  // overflow save cat
-            }
-            fprintf( fp, "%s\n", line );    // file write
-        }
-        fclose(fp); // close file handle
 
     /* Unknown file extension */
     } else {
-        printf("  ERROR:%s: unsuppored file type '%s'\n", __FUNCTION__, charPtrFileExt);
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsuppored file type '%s'\n", __FUNCTION__, charPtrFileExt); }
         return 8;
     }
 
     /* finish function */
+    return 0;
+}
+
+
+
+/**
+ *  sfm_load
+ *    loads file into flash
+ *    .dif -> difference to empty flash, full initialized with 0xff
+ */
+int sfm_load (t_sfm *self, char fileName[])
+{
+    /** Variables **/
+    char*       charPtrFileExt;         // pointer to file extension
+    uint8_t*    uint8PtrLdBuf = NULL;   // load buffer
+
+
+    /* Function Call Message */
+    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+
+    /* flash type selected */
+    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
+        return 1;
+    }
+
+    /* memory allocated */
+    uint8PtrLdBuf = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);    // allocate intermediate buffer
+    if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
+        return 2;
+    }
+
+    /* check desired file extension */
+    charPtrFileExt = strrchr(fileName, '.') + 1;
+    /* no file extension */
+    if ( !charPtrFileExt ) {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
+        return 4;
+
+    /* dif extension */
+    } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
+        /* entry message */
+        if ( 0 != self->uint8MsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
+        /* File read */
+        if ( 0 != sfm_read_dif ( uint8PtrLdBuf,
+                                 SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
+                                 fileName
+                               )
+        ) {
+            if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
+            return 8;
+        }
+        /* write back to spi flash */
+        memcpy( self->uint8PtrMem, uint8PtrLdBuf, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
+
+    /* Unknown file extension */
+    } else {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
+        return 8;
+    }
+
+    /* finish function */
+    free(uint8PtrLdBuf);
     return 0;
 }
 

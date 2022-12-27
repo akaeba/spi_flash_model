@@ -73,7 +73,7 @@ typedef struct t_sfm_type {
  */
 typedef struct {
     uint8_t     uint8MsgLevel;      /**<  Message Level, 0: no messages */
-    uint8_t*    uint8PtrMem;        /**<  Flash memory, allocated memory coresponds to flash size */
+    uint8_t*    uint8PtrMem;        /**<  Flash memory, allocated memory corresponds to flash size */
     uint32_t    uint32SelFlash;     /**<  Flash Type is selected */
     uint8_t     uint8StatusReg1;    /**<  Status Register */
 } t_sfm;
@@ -135,6 +135,26 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop);
  *  @author         Andreas Kaeberlein
  */
 int sfm_store (t_sfm *self, char fileName[]);
+
+
+
+/**
+ *  @brief load
+ *
+ *  loads file into flash
+ *
+ *  @param[in,out]  self                handle
+ *  @param[in]      fileName            file name for save
+ *  @return         int                 state
+ *  @retval         0                   OKAY
+ *  @retval         1                   no flash selected
+ *  @retval         2                   no memory allocated
+ *  @retval         4                   no file name provided
+ *  @retval         8                   failed to open file
+ *  @since          2022-12-27
+ *  @author         Andreas Kaeberlein
+ */
+int sfm_load (t_sfm *self, char fileName[]);
 
 
 
