@@ -13,4 +13,5 @@
 #
 *.dif
 !/test/flash_read.dif
+/test/spi_flash_model_test
 #
