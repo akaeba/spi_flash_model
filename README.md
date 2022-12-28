@@ -7,8 +7,8 @@ Arbitrary SPI Flash C model. With the scope of an SPI Flash driver unit test emu
 
 ## Features
 
-The [model](./spi_flash_model.c) emulates an SPI Flash on logic level. As input are SPI packets used. In the real
-application would this packet sent to the SPI instead.
+The [model](./spi_flash_model.c) emulates an SPI Flash on logic level. As input are SPI packets used. In real world
+applications this SPI packets would be sent to the physically SPI core instead.
 
 
 ### Limits
