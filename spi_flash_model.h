@@ -159,6 +159,27 @@ int sfm_load (t_sfm *self, char fileName[]);
 
 
 /**
+ *  @brief compare
+ *
+ *  compares file with flash meomory content
+ *
+ *  @param[in,out]  self                handle
+ *  @param[in]      fileName            file name for save
+ *  @return         int                 state
+ *  @retval         0                   SFM and file matches
+ *  @retval         1                   no flash selected
+ *  @retval         2                   no memory allocated
+ *  @retval         4                   no file name provided
+ *  @retval         8                   failed to open file
+ *  @retval         16                  ´mismatch file/sfm
+ *  @since          2022-12-28
+ *  @author         Andreas Kaeberlein
+ */
+int sfm_cmp (t_sfm *self, char fileName[]);
+
+
+
+/**
  *  @brief access flash
  *
  *  interacts with flash model

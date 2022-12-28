@@ -188,7 +188,7 @@ int main ()
         printf("ERROR:%s:sfm: Invalid Read Data value\n", __FUNCTION__);
         goto ERO_END;
     }
-    sfm_dump( &spiFlash, 0x1010, 0x1040 );
+    sfm_dump( &spiFlash, 0x1010, 0x1030 );
 
     /* sfm_store */
     printf("INFO:%s:sfm_store\n", __FUNCTION__);
@@ -218,16 +218,30 @@ int main ()
     for ( uint8_t i = 0; i < 16; i++ ) {
         if ( i != spiFlash.uint8PtrMem[i] ) {
             printf("ERROR:%s:sfm_load: error byte=%x, is=%x, exp=%x\n", __FUNCTION__, i, spiFlash.uint8PtrMem[i], i);
-            sfm_dump( &spiFlash, 0x0, 0x20 );
+            sfm_dump( &spiFlash, 0x0, 0x10 );
             goto ERO_END;
         }
     }
     for ( uint8_t i = 0; i < 16; i++ ) {
         if ( (i<<4) != spiFlash.uint8PtrMem[0x100+i] ) {
             printf("ERROR:%s:sfm_load: error byte=%x, is=%x, exp=%x\n", __FUNCTION__, i, spiFlash.uint8PtrMem[i], i);
-            sfm_dump( &spiFlash, 0x90, 0x120 );
+            sfm_dump( &spiFlash, 0x90, 0x110 );
             goto ERO_END;
         }
+    }
+
+    /* sfm_cmp */
+    printf("INFO:%s:sfm_cmp\n", __FUNCTION__);
+    if ( 0 != sfm_cmp(&spiFlash, "./test/flash_read.dif") ) {
+        printf("ERROR:%s:sfm_cmp: Mismatch\n", __FUNCTION__);
+        goto ERO_END;
+    }
+    /* provoke compare error */
+    printf("INFO:%s:sfm_cmp: provoke error\n", __FUNCTION__);
+    spiFlash.uint8PtrMem[0x11] = 12;
+    if ( 0 == sfm_cmp(&spiFlash, "./test/flash_read.dif") ) {
+        printf("ERROR:%s:sfm_cmp: Mismatch expected\n", __FUNCTION__);
+        goto ERO_END;
     }
 
     /* graceful end */

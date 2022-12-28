@@ -236,6 +236,94 @@ static int sfm_read_dif (uint8_t *buf, uint32_t len, char fileName[])
 
 
 
+/** @brief min
+ *
+ *  return smaller number
+ *
+ *  @param[in]      val1            comparison value 1
+ *  @param[in]      val2            comparison value 2
+ *  @return         uint32_t        bigger number of both inputs
+ *
+ */
+static uint32_t sfm_min_uint32 (uint32_t val1, uint32_t val2)
+{
+    if ( val1 < val2 ) {
+        return val1;
+    }
+    return val2;
+}
+
+
+
+/** @brief subtract
+ *
+ *  overflow save subtraction
+ *
+ *  @param[in]      minuend         value from which something is removed
+ *  @param[in]      subtrahend      the value of subtraction
+ *  @return         uint32_t        saturated difference of 'minuend - subtrahend'
+ *
+ */
+static uint32_t sfm_subtract_uint32 (uint32_t minuend, uint32_t subtrahend)
+{
+    /* underflow */
+    if ( subtrahend > minuend ) {
+        return (uint32_t) 0;
+    }
+    /* subtract */
+    return (uint32_t) (minuend - subtrahend);
+}
+
+
+
+/** @brief hexdump
+ *
+ *  dumps uint8 array to console with 16 values per row
+ *
+ *  @param[in,out]  *data           uint8 data to printed
+ *  @param[in]      start           start address, aligned to multiples of 16
+ *  @param[in]      stop            stop address, aligned to multiples of 16
+ *  @param[in,out]  rowlead         leading string in each row of dump
+ *  @return         uint32_t        saturated difference of 'minuend - subtrahend'
+ *
+ */
+static void sfm_hexdump_uint8 (uint8_t *data, uint32_t start, uint32_t stop, char rowlead[])
+{
+    /** Variables **/
+    uint32_t    uint32Start;
+    uint32_t    uint32Stop;
+    uint8_t     uint8AdrDigits;
+
+    /* check */
+    if ( start > stop ) {
+        return;
+    }
+    /* assign address to multiples of 16 */
+    uint32Start = start & (uint32_t) ~0xF;  // start at 0
+    uint32Stop = stop | (uint32_t) 0xF;     // stop at 15
+    /* leading zeros in adr */
+    uint8AdrDigits = sfm_adr_digits( uint32Stop );
+    /* dump to console */
+    for ( uint32_t i = uint32Start; i < uint32Stop; i += 16 ) {
+        /* address */
+        printf("%s%0*x: ", rowlead, uint8AdrDigits, i);  // memory address
+        /* 16 byte per row */
+        for ( uint32_t j = 0; j < 16; j++ ) {
+            /* hex number */
+            printf("%02x ", data[i+j]);
+            /* divide high/low bytes */
+            if ( 7 == j ) {
+                printf(" ");
+            }
+        }
+        printf("\n");   // new row
+    }
+    /* end */
+    return;
+}
+
+
+
 /**
  *  sfm_init
  *    initializes spi flash model handle
@@ -281,7 +369,6 @@ int sfm_init (t_sfm *self, char flashType[])
 int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
 {
     /** Variables **/
-    uint8_t     uint8AdrDigits; // digits of hex address
     uint32_t    uint32Start;    // stop address
     uint32_t    uint32Stop;     // start address
 
@@ -301,13 +388,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
         return 2;
     }
 
-    /* determine number of hex digits for full address */
-    uint8AdrDigits = sfm_adr_digits( SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte );
-    if ( 0 != self->uint8MsgLevel ) {
-        printf("  INFO:%s: uint8AdrDigits = %d\n", __FUNCTION__, uint8AdrDigits);
-    }
-
-    /* process input arguments */
+    /* default args */
     uint32Start = (uint32_t) start;
     uint32Stop = (uint32_t) stop;
     if ( 0 > start ) {
@@ -316,30 +397,17 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
     if ( 0 > stop ) {
         uint32Stop = SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte;
     }
-    uint32Start = uint32Start & (uint32_t) ~0xF;    // align to multiples of 16
-    uint32Stop = uint32Stop & (uint32_t) ~0xF;      // multiples of 16
+
+    /* inside address range */
     if ( uint32Stop  > SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1 ||
          uint32Start > SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1
     ) {
-        printf("  ERROR:%s: flash address out of range\n", __FUNCTION__);
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: flash address out of range\n", __FUNCTION__); }
         return 4;
     }
 
     /* dump flash to console */
-    for ( uint32_t i = uint32Start; i < uint32Stop; i += 16 ) {
-        /* address */
-        printf("%0*x:   ", uint8AdrDigits, i);  // memory address
-        /* 16 byte per row */
-        for ( uint32_t j = 0; j < 16; j++ ) {
-            /* hex number */
-            printf("%02x ", self->uint8PtrMem[i+j]);
-            /* divide high/low bytes */
-            if ( 7 == j ) {
-                printf(" ");
-            }
-        }
-        printf("\n");   // new row
-    }
+    sfm_hexdump_uint8 (self->uint8PtrMem, uint32Start, uint32Stop, "");
 
     /* finish function */
     return 0;
@@ -461,6 +529,82 @@ int sfm_load (t_sfm *self, char fileName[])
     } else {
         if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
         return 8;
+    }
+
+    /* finish function */
+    free(uint8PtrLdBuf);
+    return 0;
+}
+
+
+
+/**
+ *  sfm_cmp
+ *    compares file with internal spi buffer
+ */
+int sfm_cmp (t_sfm *self, char fileName[])
+{
+    /** Variables **/
+    char*       charPtrFileExt;         // pointer to file extension
+    uint8_t*    uint8PtrLdBuf = NULL;   // load buffer
+
+
+    /* Function Call Message */
+    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+
+    /* flash type selected */
+    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
+        return 1;
+    }
+
+    /* memory allocated */
+    uint8PtrLdBuf = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);    // allocate intermediate buffer
+    if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
+        return 2;
+    }
+
+    /* check desired file extension */
+    charPtrFileExt = strrchr(fileName, '.') + 1;
+    /* no file extension */
+    if ( !charPtrFileExt ) {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
+        return 4;
+
+    /* dif extension */
+    } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
+        /* entry message */
+        if ( 0 != self->uint8MsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
+        /* File read */
+        if ( 0 != sfm_read_dif ( uint8PtrLdBuf,
+                                 SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
+                                 fileName
+                               )
+        ) {
+            if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
+            return 8;
+        }
+
+    /* Unknown file extension */
+    } else {
+        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
+        return 8;
+    }
+
+    /* compare memory content */
+    for ( uint32_t i = 0; i < SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte; i++ ) {
+        if ( self->uint8PtrMem[i] != uint8PtrLdBuf[i] ) {
+            if ( 0 != self->uint8MsgLevel ) {
+                printf("  ERROR:%s: mismatch at 0x%x: is=0x%02x, exp=0x%02x\n", __FUNCTION__, i, self->uint8PtrMem[i], uint8PtrLdBuf[i]);
+                printf("  ERROR:%s: IS dump\n", __FUNCTION__);
+                sfm_hexdump_uint8 (self->uint8PtrMem, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte), "    ");
+                printf("  ERROR:%s: EXP dump\n", __FUNCTION__);
+                sfm_hexdump_uint8 (uint8PtrLdBuf, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte), "    ");
+                free(uint8PtrLdBuf);    // free memory
+            }
+            return 16;  // mismatch to file
+        }
     }
 
     /* finish function */
