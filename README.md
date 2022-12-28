@@ -2,7 +2,7 @@
 
 # SPI-Flash-Model
 
-Arbitrary SPI Flash C model.
+Arbitrary SPI Flash C model. With the scope of an SPI Flash driver unit test emulates this module SPI Flashes on logic level.
 
 
 ## Features
@@ -37,7 +37,7 @@ The [unittest](./test/spi_flash_model_test.c) gives a good flavor how to use the
 
 #### Init
 
-Initializes the SFM and selects the emulated flash
+Initializes the SFM and selects the emulated flash.
 
 ```c
 int sfm_init (t_sfm *self, char flashType[]);
