@@ -53,7 +53,7 @@ The [unittest](./test/spi_flash_model_test.c) gives a good flavor how to use the
 
 ### API
 
-To interact with the _sfm_ (SPI Flash Model) are the following function available.
+To interact with the _sfm_ (SPI Flash Model) are the following functions available.
 
 
 #### Init
