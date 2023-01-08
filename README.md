@@ -4,7 +4,7 @@
   * [Features](#features)
     + [Limits](#limits)
   * [Releases](#releases)
-  * [[Emulated Flash](./spi_flash_types.h)](#-emulated-flash---spi-flash-typesh-)
+  * [[Emulated Flash](#emulated-flash)
   * [How to use](#how-to-use)
     + [API](#api)
       - [Init](#init)
@@ -12,7 +12,7 @@
       - [Store](#store)
       - [Load](#load)
       - [Compare](#compare)
-      - [SFM (Spi Flash Model)](#sfm--spi-flash-model-)
+      - [SFM (Spi Flash Model)](#SFM-(Spi-Flash-Model))
     + [Example](#example)
   * [References](#references)
 
