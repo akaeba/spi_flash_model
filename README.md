@@ -7,8 +7,8 @@ Arbitrary SPI Flash C model. With the scope of an SPI Flash driver unit test emu
 
 ## Features
 
-The [model](./spi_flash_model.c) emulates an SPI Flash on logic level. As input are SPI packets used. In real world
-applications this SPI packets would be sent to the physically SPI core instead.
+The [model](./spi_flash_model.c) emulates an SPI Flash on logic level. As input are SPI packets used. In a real
+world application would be sent this SPI packet to the physically SPI core instead.
 
 
 ### Limits
@@ -94,6 +94,61 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len);
 
 ### Example
 
+The ```c``` snippet below shows an minimal example to interact with the _sfm_. The variable _spi_ represents
+the packet sent to the SPI flash.
+
+```c
+#include <stdlib.h> // EXIT codes, malloc
+#include <stdio.h>  // f.e. printf
+#include <stdint.h> // defines fixed data types: int8_t...
+#include "spi_flash_model.h"  // function prototypes
+
+int main ()
+{
+  /* variables */
+  uint8_t spi[10];  // spi packet to interact with sfm
+  t_sfm   spiFlash; // handle to SPI Flash
+
+  /* define used flash model */
+  sfm_init (&spiFlash, "W25Q16JV");
+
+  /* write enable */
+  spi[0] = 0x06;            // W25Q16JV: write enable instruction
+  sfm (&spiFlash, spi, 1);  // access flash model
+
+  /* write page */
+  spi[0] = 0x02;  // instruction
+  spi[1] = 0x00;  // address high byte
+  spi[2] = 0x00;  // address middle byte
+  spi[3] = 0x00;  // address low byte
+  spi[4] = 0x01;  // data
+  spi[5] = 0x23;
+  spi[6] = 0x45;
+  spi[7] = 0x67;
+  spi[8] = 0x89;
+  spi[9] = 0xAB;
+  sfm(&spiFlash, spi, 10);  // access flash model
+
+  /* dump current flash content to check write */
+  sfm_dump (&spiFlash, 0x0, 0x10);
+
+  /* normal end */
+  exit(0);
+}
+```
+
+This example compiled and executed leads to following output
+
+```bash
+gcc -c -O spi_flash_model.c -o spi_flash_model.o
+gcc -c -O main.c -o main.o
+gcc spi_flash_model.o main.o -lm -o main
+
+./main
+
+00: 01 23 45 67 89 ab ff ff  ff ff ff ff ff ff ff ff
+10: ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff
+```
 
 
 ## References
