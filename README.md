@@ -144,7 +144,7 @@ int main ()
   spi[7] = 0x67;
   spi[8] = 0x89;
   spi[9] = 0xAB;
-  sfm(&spiFlash, spi, 10);  // access flash model
+  sfm (&spiFlash, spi, 10); // access flash model
 
   /* dump current flash content to check write */
   sfm_dump (&spiFlash, 0x0, 0x10);
