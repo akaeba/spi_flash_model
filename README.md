@@ -4,7 +4,7 @@
   * [Features](#features)
     + [Limits](#limits)
   * [Releases](#releases)
-  * [[Emulated Flash](#emulated-flash)
+  * [Emulated Flash](#emulated-flash)
   * [How to use](#how-to-use)
     + [API](#api)
       - [Init](#init)
@@ -12,7 +12,7 @@
       - [Store](#store)
       - [Load](#load)
       - [Compare](#compare)
-      - [SFM (Spi Flash Model)](#SFM-(Spi-Flash-Model))
+      - [SFM (Spi Flash Model)](#SFM)
     + [Example](#example)
   * [References](#references)
 
@@ -100,7 +100,7 @@ int sfm_cmp (t_sfm *self, char fileName[]);
 ```
 
 
-#### SFM (Spi Flash Model)
+#### SFM
 
 Access SPI Flash memory. SPI request and response are placed in the same SPI buffer variable.
 
