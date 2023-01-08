@@ -1,5 +1,22 @@
 [![Test](https://github.com/akaeba/spi_flash_model/workflows/test/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/test.yml) [![Doxygen](https://github.com/akaeba/spi_flash_model/workflows/doxygen/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/doxygen.yml)
 
+- [SPI-Flash-Model](#spi-flash-model)
+  * [Features](#features)
+    + [Limits](#limits)
+  * [Releases](#releases)
+  * [[Emulated Flash](./spi_flash_types.h)](#-emulated-flash---spi-flash-typesh-)
+  * [How to use](#how-to-use)
+    + [API](#api)
+      - [Init](#init)
+      - [Dump](#dump)
+      - [Store](#store)
+      - [Load](#load)
+      - [Compare](#compare)
+      - [SFM (Spi Flash Model)](#sfm--spi-flash-model-)
+    + [Example](#example)
+  * [References](#references)
+
+
 # SPI-Flash-Model
 
 Arbitrary SPI Flash C model. With the scope of an SPI Flash driver unit test emulates this module SPI Flashes on logic level.
@@ -117,7 +134,7 @@ int main ()
   sfm (&spiFlash, spi, 1);  // access flash model
 
   /* write page */
-  spi[0] = 0x02;  // instruction
+  spi[0] = 0x02;  // W25Q16JV: write page instruction
   spi[1] = 0x00;  // address high byte
   spi[2] = 0x00;  // address middle byte
   spi[3] = 0x00;  // address low byte
@@ -137,7 +154,7 @@ int main ()
 }
 ```
 
-This example compiled and executed leads to following output
+This example compiled and executed leads to following output:
 
 ```bash
 gcc -c -O spi_flash_model.c -o spi_flash_model.o
