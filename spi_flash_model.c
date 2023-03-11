@@ -867,8 +867,9 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         /* clear start of spi packet */
         spiCur = (uint32_t) SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1;
         memset(spi, 0, (size_t) spiCur);
+        /* page write */
         for ( i = spiCur; i < len; i++ ) {
-            self->uint8PtrMem[flashAdrBase+flashAdr] = spi[i];
+            self->uint8PtrMem[flashAdrBase+flashAdr] &= spi[i]; // in flash can only bits swapped from 1s -> 0s, otherwise erase
             flashAdr++;
             flashAdr &= (uint32_t) SPI_FLASH[self->uint32SelFlash].uint32FlashTopoPageSizeByte - 1; // page overroll
         }
