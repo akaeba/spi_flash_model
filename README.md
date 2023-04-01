@@ -31,6 +31,7 @@ world application would be sent this SPI packet to the physically SPI core inste
 ### Limits
 
 * No timing behavior
+    * emulated with [WIP](https://github.com/akaeba/spi_flash_model/blob/main/spi_flash_model.h#L32) poll constant
 
 
 ## Releases
@@ -149,6 +150,12 @@ int main ()
   spi[8] = 0x89;
   spi[9] = 0xAB;
   sfm (&spiFlash, spi, 10); // access flash model
+    // poll for WIP
+  for ( uint8_t i = 0; i < SFM_WIP_RETRY_IDLE; i++ ) {
+    spiLen = 2;
+    spi[0] = 0x05;
+    sfm(&spiFlash, spi, spiLen);  // read state reg, needed for WIP poll
+  }
 
   /* dump current flash content to check write */
   sfm_dump (&spiFlash, 0x0, 0x10);
