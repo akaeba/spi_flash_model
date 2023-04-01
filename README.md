@@ -36,10 +36,10 @@ world application would be sent this SPI packet to the physically SPI core inste
 
 ## Releases
 
-| Version                                                         | Date       | Source                                                                                              | Change log                                              |
-| --------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| latest                                                          |            | <a id="raw-url" href="https://github.com/akaeba/spi_flash_model/archive/master.zip ">latest.zip</a> |                                                         |
-| [v0.1.0](https://github.com/akaeba/spi_flash_model/tree/v0.1.0) | tbd.       | <a id="raw-url" href="https://github.com/akaeba/spi_flash_model/archive/v0.1.0.zip ">v0.1.0.zip</a> | initial draft                                           |
+| Version                                                         | Date       | Source                                                                                                        | Change log                                              |
+| --------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| latest                                                          |            | <a id="raw-url" href="https://github.com/akaeba/spi_flash_model/archive/master.zip ">latest.zip</a>           |                                                         |
+| [v0.1.0](https://github.com/akaeba/spi_flash_model/tree/v0.1.0) | 2023-04-01 | <a id="raw-url" href="https://github.com/akaeba/spi_flash_model/archive/refs/tags/v0.1.0.zip ">v0.1.0.zip</a> | initial draft                                           |
 
 
 ## [Emulated Flash](./spi_flash_types.h)
