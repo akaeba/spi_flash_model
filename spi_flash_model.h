@@ -21,6 +21,20 @@
 #define __SPI_FLASH_MODEL_H
 
 
+/**
+ * @defgroup SFM_HELP constants
+ *
+ * Commen used help definitions.
+ *
+ * @{
+ */
+#ifndef SFM_WIP_RETRY_IDLE
+    #define SFM_WIP_RETRY_IDLE  (3)     /**<  Number of WIP registers poll until after Page write / Erase the SFM is ready for new requests */
+#endif
+/** @} */
+
+
+
 /* C++ compatibility */
 #ifdef __cplusplus
 extern "C"
@@ -72,10 +86,11 @@ typedef struct t_sfm_type {
  *  @author Andreas Kaeberlein
  */
 typedef struct {
-    uint8_t     uint8MsgLevel;      /**<  Message Level, 0: no messages */
-    uint8_t*    uint8PtrMem;        /**<  Flash memory, allocated memory corresponds to flash size */
-    uint32_t    uint32SelFlash;     /**<  Flash Type is selected */
-    uint8_t     uint8StatusReg1;    /**<  Status Register */
+    uint8_t     uint8MsgLevel;              /**<  Message Level, 0: no messages */
+    uint8_t*    uint8PtrMem;                /**<  Flash memory, allocated memory corresponds to flash size */
+    uint32_t    uint32SelFlash;             /**<  Flash Type is selected */
+    uint8_t     uint8StatusReg1;            /**<  Status Register */
+    uint8_t     uint8WipRdAfterWriteCnt;    /**<  Number of WIP Flag Reads until new write i spossible, emulates timing behaviour of flash */
 } t_sfm;
 
 

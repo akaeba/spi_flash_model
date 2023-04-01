@@ -98,6 +98,19 @@ int main ()
         goto ERO_END;
     }
 
+    /* sfm: Read Status Register */
+    printf("INFO:%s:sfm: Read Status Register\n", __FUNCTION__);
+    spiLen = 2;
+    spi[0] = 0x05;
+    if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
+        printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
+        goto ERO_END;
+    }
+    if ( 0 != spi[1] ) {
+        printf("ERROR:%s:sfm: Invalid Status Register value\n", __FUNCTION__);
+        goto ERO_END;
+    }
+
     /* sfm: chip erase */
     printf("INFO:%s:sfm: Chip erase\n", __FUNCTION__);
     spiLen = 1;
@@ -110,6 +123,15 @@ int main ()
     if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
         printf("ERROR:%s:sfm: chip erase\n", __FUNCTION__);
         goto ERO_END;
+    }
+        // poll for WIP
+    for ( uint8_t i = 0; i < SFM_WIP_RETRY_IDLE; i++ ) {
+        spiLen = 2;
+        spi[0] = 0x05;
+        if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
+            printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
+            goto ERO_END;
+        }
     }
 
     /* sfm: Sector erase */
@@ -129,18 +151,14 @@ int main ()
         printf("ERROR:%s:sfm: sector erase\n", __FUNCTION__);
         goto ERO_END;
     }
-
-    /* sfm: Read Status Register */
-    printf("INFO:%s:sfm: Read Status Register\n", __FUNCTION__);
-    spiLen = 2;
-    spi[0] = 0x05;
-    if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
-        printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
-        goto ERO_END;
-    }
-    if ( 0 != spi[1] ) {
-        printf("ERROR:%s:sfm: Invalid Status Register value\n", __FUNCTION__);
-        goto ERO_END;
+        // poll for WIP
+    for ( uint8_t i = 0; i < SFM_WIP_RETRY_IDLE; i++ ) {
+        spiLen = 2;
+        spi[0] = 0x05;
+        if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
+            printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
+            goto ERO_END;
+        }
     }
 
     /* sfm: Read Data */
@@ -188,6 +206,16 @@ int main ()
         printf("ERROR:%s:sfm: Invalid Read Data value\n", __FUNCTION__);
         goto ERO_END;
     }
+        // poll for WIP
+    for ( uint8_t i = 0; i < SFM_WIP_RETRY_IDLE; i++ ) {
+        spiLen = 2;
+        spi[0] = 0x05;
+        if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
+            printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
+            goto ERO_END;
+        }
+    }
+        // store to file
     sfm_dump( &spiFlash, 0x1010, 0x1030 );
 
     /* sfm_store */

@@ -338,6 +338,7 @@ int sfm_init (t_sfm *self, char flashType[])
     self->uint8PtrMem = NULL;               // not initialized
     self->uint32SelFlash = (uint32_t) ~0;   // make invalid
     self->uint8StatusReg1 = 0;              // status register
+    self->uint8WipRdAfterWriteCnt = 0;      // ready for write access
     /* determine SPI flash by name */
     for ( i = 0; i < sizeof(SPI_FLASH)/sizeof(SPI_FLASH[0]) - 1; i++ ) {
         if ( 0 == strcasecmp(flashType, SPI_FLASH[i].charFlashName) ) { // match
@@ -744,12 +745,21 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             }
             return 16;  // write protected
         }
+        /* Write in progress? */
+        if ( 0 != self->uint8WipRdAfterWriteCnt ) {
+            if ( 0 != self->uint8MsgLevel ) {
+                printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
+            }
+            return 32;  // Write in progress
+        }
         /* erase */
         memset(self->uint8PtrMem, 0xff, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
         /* clear write enable */
         self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk);
         /* spi response */
         memset(spi, 0, len);
+        /* set wait for write in progres */
+        self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;
         /* exit */
         return 0;
 
@@ -774,6 +784,13 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             }
             return 16;  // write protected
         }
+        /* Write in progress? */
+        if ( 0 != self->uint8WipRdAfterWriteCnt ) {
+            if ( 0 != self->uint8MsgLevel ) {
+                printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
+            }
+            return 32;  // Write in progress
+        }
         /* assemble address */
         flashAdr = sfm_spi_to_adr (spi+1, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);      // spi packet to address
         flashAdr &= (uint32_t) ~(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoSectorSizeByte - 1);    // allign to sector
@@ -790,6 +807,8 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk);
         /* spi response */
         memset(spi, 0, len);
+        /* set wait for write in progres */
+        self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;
         /* exit */
         return 0;
 
@@ -809,6 +828,10 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         /* response */
         spi[0] = 0;
         spi[1] = self->uint8StatusReg1;
+        /* state reg 1 has WIP flag */
+        if ( 0 < self->uint8WipRdAfterWriteCnt ) {  // no write (erase/page programm) possible, more WIP polls are necessary
+            --(self->uint8WipRdAfterWriteCnt);
+        }
         /* exit */
         return 0;
 
@@ -859,6 +882,13 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             }
             return 16;  // write protected
         }
+        /* Write in progress? */
+        if ( 0 != self->uint8WipRdAfterWriteCnt ) {
+            if ( 0 != self->uint8MsgLevel ) {
+                printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
+            }
+            return 32;  // Write in progress
+        }
         /* spi packet to address */
         flashAdr     = sfm_spi_to_adr (spi+1, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);
         flashAdrBase = flashAdr;
@@ -873,6 +903,8 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             flashAdr++;
             flashAdr &= (uint32_t) SPI_FLASH[self->uint32SelFlash].uint32FlashTopoPageSizeByte - 1; // page overroll
         }
+        /* set wait for write in progres */
+        self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;
         /* exit */
         return 0;
 
