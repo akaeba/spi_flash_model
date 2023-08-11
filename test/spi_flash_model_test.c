@@ -9,6 +9,7 @@
 
  @file:       spi_flash_model_test.c
  @date:       2022-12-18
+ @see:        https://github.com/akaeba/spi_flash_model
 
  @brief:      unit test
               tests spi flash model
@@ -131,6 +132,17 @@ int main ()
         if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
             printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
             goto ERO_END;
+        }
+        if ( i < (SFM_WIP_RETRY_IDLE - 1) ) {   // WIP
+            if ( 0 == (spi[1] & 0x01) ) {
+                printf("ERROR:%s:sfm: Expected active WIP\n", __FUNCTION__);
+                goto ERO_END;
+            }
+        } else {    // no WIP
+            if ( 0 != (spi[1] & 0x01) ) {
+                printf("ERROR:%s:sfm: Expected inactive WIP\n", __FUNCTION__);
+                goto ERO_END;
+            }
         }
     }
 
