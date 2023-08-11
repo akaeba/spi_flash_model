@@ -133,7 +133,8 @@ int main ()
             printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
             goto ERO_END;
         }
-        if ( i < (SFM_WIP_RETRY_IDLE - 1) ) {   // WIP
+        printf("ERROR:%s:sfm: Status Register 1 = 0x%02x\n", __FUNCTION__, spi[1]);
+        if ( i < SFM_WIP_RETRY_IDLE ) { // WIP
             if ( 0 == (spi[1] & 0x01) ) {
                 printf("ERROR:%s:sfm: Expected active WIP\n", __FUNCTION__);
                 goto ERO_END;
