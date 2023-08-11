@@ -9,6 +9,7 @@
 
  @file:       spi_flash_model.c
  @date:       2022-12-18
+ @see:        https://github.com/akaeba/spi_flash_model
 
  @brief:      spi flash
               spi flash model, input is a spi packet
@@ -825,13 +826,16 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             }
             return 4;   // malformed instruction
         }
-        /* response */
-        spi[0] = 0;
-        spi[1] = self->uint8StatusReg1;
         /* state reg 1 has WIP flag */
         if ( 0 < self->uint8WipRdAfterWriteCnt ) {  // no write (erase/page programm) possible, more WIP polls are necessary
             --(self->uint8WipRdAfterWriteCnt);
+            self->uint8StatusReg1 |= (uint8_t) (SPI_FLASH[self->uint32SelFlash].uint8FlashMngWipMsk);   // set WIP
+        } else {    // no WIP
+            self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWipMsk);  // clear WIP flag
         }
+        /* response */
+        spi[0] = 0;
+        spi[1] = self->uint8StatusReg1;
         /* exit */
         return 0;
 
