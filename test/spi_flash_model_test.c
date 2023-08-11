@@ -165,12 +165,24 @@ int main ()
         goto ERO_END;
     }
         // poll for WIP
-    for ( uint8_t i = 0; i < SFM_WIP_RETRY_IDLE; i++ ) {
+    for ( uint8_t i = 0; i < (SFM_WIP_RETRY_IDLE + 1); i++ ) {
         spiLen = 2;
         spi[0] = 0x05;
         if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
             printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
             goto ERO_END;
+        }
+        printf("ERROR:%s:sfm: Status Register 1 = 0x%02x\n", __FUNCTION__, spi[1]);
+        if ( i < SFM_WIP_RETRY_IDLE ) { // WIP
+            if ( 0 == (spi[1] & 0x01) ) {
+                printf("ERROR:%s:sfm: Expected active WIP\n", __FUNCTION__);
+                goto ERO_END;
+            }
+        } else {    // no WIP
+            if ( 0 != (spi[1] & 0x01) ) {
+                printf("ERROR:%s:sfm: Expected inactive WIP\n", __FUNCTION__);
+                goto ERO_END;
+            }
         }
     }
 
@@ -220,12 +232,24 @@ int main ()
         goto ERO_END;
     }
         // poll for WIP
-    for ( uint8_t i = 0; i < SFM_WIP_RETRY_IDLE; i++ ) {
+    for ( uint8_t i = 0; i < (SFM_WIP_RETRY_IDLE + 1); i++ ) {
         spiLen = 2;
         spi[0] = 0x05;
         if ( 0 != sfm(&spiFlash, spi, spiLen) ) {
             printf("ERROR:%s:sfm: Read Status Register\n", __FUNCTION__);
             goto ERO_END;
+        }
+        printf("ERROR:%s:sfm: Status Register 1 = 0x%02x\n", __FUNCTION__, spi[1]);
+        if ( i < SFM_WIP_RETRY_IDLE ) { // WIP
+            if ( 0 == (spi[1] & 0x01) ) {
+                printf("ERROR:%s:sfm: Expected active WIP\n", __FUNCTION__);
+                goto ERO_END;
+            }
+        } else {    // no WIP
+            if ( 0 != (spi[1] & 0x01) ) {
+                printf("ERROR:%s:sfm: Expected inactive WIP\n", __FUNCTION__);
+                goto ERO_END;
+            }
         }
     }
         // store to file
