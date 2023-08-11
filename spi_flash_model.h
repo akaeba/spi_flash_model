@@ -9,6 +9,7 @@
 
  @file:       spi_flash_model.h
  @date:       2022-12-18
+ @see:        https://github.com/akaeba/spi_flash_model
 
  @brief:      spi flash
               spi flash model, input is a spi packet
