@@ -22,31 +22,35 @@ name: doxygen
 
 on:
   push:
-    tags:        
-      - '**'    # '**' 	Matches all branch and tag names.
+    tags:
+      - '**'    # '**'  Matches all branch and tag names.
+    branches:
+      - main
+    pull_request:
+      branches:
+      - main
 
 jobs:
   doxygen:
     runs-on: ubuntu-latest
-    container: dolphinics/doxygen:latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Prepare Dirs
         run: |
-          mkdir -p ./doxygen/out
+          mkdir -p ./doxygen/out/latex
       - name: Run Doxygen
-        run: |
-          doxygen --version
-          doxygen ./doxygen/Doxyfile
-      - name: Run Latex
-        run: |
-          pdflatex --version
-          (cd ./doxygen/out/latex && make)  # build pdf without path change
-          mv ./doxygen/out/latex/refman.pdf ./${{github.event.repository.name}}_ug-${{github.ref_name}}.pdf    # move to top
-      - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v3
+        uses: mattnotmitt/doxygen-action@v1.12.0    # https://github.com/mattnotmitt/doxygen-action
         with:
-          name: Userguide-${{github.ref_name}}
+          working-directory: '.'                # Path of the working directory to change to before running doxygen
+          doxyfile-path: './doxygen/Doxyfile'   # Path of the Doxyfile relative to the working directory
+          enable-latex: true                    # Flag to enable make-ing of the LaTeX part of the doxygen output
+      - name: Rename
+        run: |
+          mv ./doxygen/out/latex/refman.pdf ./${{github.event.repository.name}}_ug-${{github.ref_name}}.pdf    # move to top
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{github.event.repository.name}}_ug-${{github.ref_name}}
           path: ${{github.event.repository.name}}_ug-${{github.ref_name}}.pdf
-          retention-days: 400
+          retention-days: 30

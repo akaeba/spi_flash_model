@@ -1,22 +1,5 @@
 [![Test](https://github.com/akaeba/spi_flash_model/workflows/test/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/test.yml) [![Doxygen](https://github.com/akaeba/spi_flash_model/workflows/doxygen/badge.svg)](https://github.com/akaeba/spi_flash_model/actions/workflows/doxygen.yml)
 
-- [SPI-Flash-Model](#spi-flash-model)
-  * [Features](#features)
-    + [Limits](#limits)
-  * [Releases](#releases)
-  * [Emulated Flash](#emulated-flash)
-  * [How to use](#how-to-use)
-    + [API](#api)
-      - [Init](#init)
-      - [Dump](#dump)
-      - [Store](#store)
-      - [Load](#load)
-      - [Compare](#compare)
-      - [SFM (Spi Flash Model)](#SFM)
-    + [Example](#example)
-  * [References](#references)
-
-
 # SPI-Flash-Model
 
 Arbitrary SPI Flash C model. With the scope of an SPI Flash driver unit test emulates this module SPI Flashes on logic level.
@@ -30,7 +13,7 @@ world application would be sent this SPI packet to the physically SPI core inste
 
 ### Limits
 
-* No timing behavior
+* No timing behaviour
     * emulated with [WIP](https://github.com/akaeba/spi_flash_model/blob/main/spi_flash_model.h#L32) poll constant
 
 
