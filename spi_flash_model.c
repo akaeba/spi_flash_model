@@ -138,6 +138,9 @@ static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
 
     /* determine number of hex digits for full address */
     uint8AdrDigits = sfm_adr_digits( len );
+    if (uint8AdrDigits > 8) {   // limit size according to uint32_t for len
+        uint8AdrDigits = 8;
+    }
     /* open file for write */
     fp = fopen(fileName, "w+");
     if ( NULL == fp ) {
@@ -173,7 +176,7 @@ static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
 
 /** @brief sfm_read_dif
  *
- *  read filt into buffer in dif format
+ *  read file into buffer in dif format
  *
  *  @param[in]      *buf            read in buffer
  *  @param[in]      len             number of elements in buffer
