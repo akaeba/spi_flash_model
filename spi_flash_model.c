@@ -338,8 +338,8 @@ int sfm_init (t_sfm *self, char flashType[])
     uint32_t    i;  // iterator
 
     /* init */
-    self->uint8MsgLevel = 0;                // no messages
-    self->uint8PtrMem = NULL;               // not initialized
+    self->intMsgLevel = 0;                  // no messages
+    self->uint8PtrMem = NULL;               // not initialised
     self->uint32SelFlash = (uint32_t) ~0;   // make invalid
     self->uint8StatusReg1 = 0;              // status register
     self->uint8WipRdAfterWriteCnt = 0;      // ready for write access
@@ -379,7 +379,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
 
 
     /* Function Call Message */
-    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+    if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
     if ( (uint32_t) ~0 == self->uint32SelFlash ) {
@@ -407,7 +407,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
     if ( uint32Stop  > SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1 ||
          uint32Start > SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1
     ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: flash address out of range\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: flash address out of range\n", __FUNCTION__); }
         return 4;
     }
 
@@ -432,17 +432,17 @@ int sfm_store (t_sfm *self, char fileName[])
 
 
     /* Function Call Message */
-    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+    if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
     if ( (uint32_t) ~0 == self->uint32SelFlash ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
 
     /* memory allocated */
     if ( NULL == self->uint8PtrMem ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
         return 2;
     }
 
@@ -450,26 +450,26 @@ int sfm_store (t_sfm *self, char fileName[])
     charPtrFileExt = strrchr(fileName, '.') + 1;
     /* no file extension */
     if ( !charPtrFileExt ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
         return 4;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
+        if ( 0 != self->intMsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
         /* File write */
         if ( 0 != sfm_write_dif ( self->uint8PtrMem,
                                   SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
                                   fileName
                                 )
         ) {
-            if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
+            if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
             return 8;
         }
 
     /* Unknown file extension */
     } else {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsuppored file type '%s'\n", __FUNCTION__, charPtrFileExt); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsuppored file type '%s'\n", __FUNCTION__, charPtrFileExt); }
         return 8;
     }
 
@@ -492,18 +492,18 @@ int sfm_load (t_sfm *self, char fileName[])
 
 
     /* Function Call Message */
-    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+    if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
     if ( (uint32_t) ~0 == self->uint32SelFlash ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
 
     /* memory allocated */
     uint8PtrLdBuf = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);    // allocate intermediate buffer
     if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
         return 2;
     }
 
@@ -511,20 +511,20 @@ int sfm_load (t_sfm *self, char fileName[])
     charPtrFileExt = strrchr(fileName, '.') + 1;
     /* no file extension */
     if ( !charPtrFileExt ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
         return 4;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
+        if ( 0 != self->intMsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
         /* File read */
         if ( 0 != sfm_read_dif ( uint8PtrLdBuf,
                                  SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
                                  fileName
                                )
         ) {
-            if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
+            if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
             return 8;
         }
         /* write back to spi flash */
@@ -532,7 +532,7 @@ int sfm_load (t_sfm *self, char fileName[])
 
     /* Unknown file extension */
     } else {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
         return 8;
     }
 
@@ -555,18 +555,18 @@ int sfm_cmp (t_sfm *self, char fileName[])
 
 
     /* Function Call Message */
-    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+    if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
     if ( (uint32_t) ~0 == self->uint32SelFlash ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
 
     /* memory allocated */
     uint8PtrLdBuf = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);    // allocate intermediate buffer
     if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
         return 2;
     }
 
@@ -574,33 +574,33 @@ int sfm_cmp (t_sfm *self, char fileName[])
     charPtrFileExt = strrchr(fileName, '.') + 1;
     /* no file extension */
     if ( !charPtrFileExt ) {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
         return 4;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
+        if ( 0 != self->intMsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
         /* File read */
         if ( 0 != sfm_read_dif ( uint8PtrLdBuf,
                                  SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
                                  fileName
                                )
         ) {
-            if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
+            if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
             return 8;
         }
 
     /* Unknown file extension */
     } else {
-        if ( 0 != self->uint8MsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
         return 8;
     }
 
     /* compare memory content */
     for ( uint32_t i = 0; i < SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte; i++ ) {
         if ( self->uint8PtrMem[i] != uint8PtrLdBuf[i] ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: mismatch at 0x%x: is=0x%02x, exp=0x%02x\n", __FUNCTION__, i, self->uint8PtrMem[i], uint8PtrLdBuf[i]);
                 printf("  ERROR:%s: IS dump\n", __FUNCTION__);
                 sfm_hexdump_uint8 (self->uint8PtrMem, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte), "    ");
@@ -636,7 +636,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
 
 
     /* Function Call Message */
-    if ( 0 != self->uint8MsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
+    if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
     if ( (uint32_t) ~0 == self->uint32SelFlash ) {
@@ -658,20 +658,20 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Read Manufacturer / Device ID */
     if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdID ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Read Manufacturer / Device ID\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdID);
         }
         /* check length */
         uint32ExpLen = (uint32_t) (1 + SPI_FLASH[self->uint32SelFlash].uint8FlashTopoRdIdDummyByte + (int) strlen(SPI_FLASH[self->uint32SelFlash].charFlashIdHex)/2);
         if ( len != uint32ExpLen ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Manufacturer / Device ID' instruction, expLen=%d, isLen=%d\n", __FUNCTION__, uint32ExpLen, len);
             }
             return 4;   // malformed instruction
         }
         /* convert to hex id */
         if ( 0!= sfm_asciihex_to_uint8 (SPI_FLASH[self->uint32SelFlash].charFlashIdHex, hexId, &hexIdLen, sizeof(hexId)/sizeof(hexId[0])) ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Convert %s\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].charFlashIdHex);
             }
             return 8;
@@ -692,12 +692,12 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Write Enable (06h) */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrEnable ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Write Enable\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrEnable);
         }
         /* check length */
         if ( 1 != len ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Write Enable' instruction, expLen=1, isLen=%d\n", __FUNCTION__, len);
             }
             return 4;   // malformed instruction
@@ -712,12 +712,12 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Write Disable (04h) */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrDisable ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Write Disable\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrDisable);
         }
         /* check length */
         if ( 1 != len ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Write Disable' instruction, expLen=1, isLen=%d\n", __FUNCTION__, len);
             }
             return 4;   // malformed instruction
@@ -732,26 +732,26 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Chip Erase */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseBulk ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Chip Erase\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseBulk);
         }
         /* check length */
         if ( 1 != len ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Chip Erase' instruction, expLen=1, isLen=%d\n", __FUNCTION__, len);
             }
             return 4;   // malformed instruction
         }
         /* check for write enable */
         if ( 0 == (self->uint8StatusReg1 & SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk) ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Chip erase while write protection\n", __FUNCTION__);
             }
             return 16;  // write protected
         }
         /* Write in progress? */
         if ( 0 != self->uint8WipRdAfterWriteCnt ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
             }
             return 32;  // Write in progress
@@ -770,27 +770,27 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Sector Erase */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseSector ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Sector Erase\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseSector);
         }
         /* check length */
         uint32ExpLen = (uint32_t) (1 + SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);
         if ( uint32ExpLen != len ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Sector Erase' instruction, expLen=%d, isLen=%d\n", __FUNCTION__, uint32ExpLen, len);
             }
             return 4;   // malformed instruction
         }
         /* check for write enable */
         if ( 0 == (self->uint8StatusReg1 & SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk) ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Sector erase while write protection\n", __FUNCTION__);
             }
             return 16;  // write protected
         }
         /* Write in progress? */
         if ( 0 != self->uint8WipRdAfterWriteCnt ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
             }
             return 32;  // Write in progress
@@ -800,7 +800,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         flashAdr &= (uint32_t) ~(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoSectorSizeByte - 1);    // allign to sector
         /* in memory? */
         if ( SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte < flashAdr + SPI_FLASH[self->uint32SelFlash].uint32FlashTopoSectorSizeByte ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Address (0x%x) exceeds flash size (0x%x)\n", __FUNCTION__, flashAdr, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
             }
             return 32;  // address exceeds flash
@@ -819,12 +819,12 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Read Status Register-1 (05h) */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdStateReg ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Read Status Register\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdStateReg);
         }
         /* check length */
         if ( 2 != len ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Status Register' instruction, expLen=2, isLen=%d\n", __FUNCTION__, len);
             }
             return 4;   // malformed instruction
@@ -845,12 +845,12 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Read Data */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdData ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Read Data\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdData);
         }
         /* check length */
         if ( len < (uint32_t) (SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1)) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Data' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1, len);
             }
             return 4;   // malformed instruction
@@ -872,26 +872,26 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* Page Program */
     } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrPage ) {
         /* entry message */
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  INFO:%s: IST=0x%02x, Page Program\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrPage);
         }
         /* check length */
         if ( len < (uint32_t) (SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1)) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Page Program' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1, len);
             }
             return 4;   // malformed instruction
         }
         /* check for write enable */
         if ( 0 == (self->uint8StatusReg1 & SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk) ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Page Program while write protection\n", __FUNCTION__);
             }
             return 16;  // write protected
         }
         /* Write in progress? */
         if ( 0 != self->uint8WipRdAfterWriteCnt ) {
-            if ( 0 != self->uint8MsgLevel ) {
+            if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
             }
             return 32;  // Write in progress
@@ -917,7 +917,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
 
     /* default */
     } else {
-        if ( 0 != self->uint8MsgLevel ) {
+        if ( 0 != self->intMsgLevel ) {
             printf("  ERROR:%s: Unknown Instruction '0x%02x'\n", __FUNCTION__, spi[0]);
         };
         return 4;   // malformed instruction

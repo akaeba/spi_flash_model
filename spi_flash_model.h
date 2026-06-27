@@ -87,7 +87,7 @@ typedef struct t_sfm_type {
  *  @author Andreas Kaeberlein
  */
 typedef struct {
-    uint8_t     uint8MsgLevel;              /**<  Message Level, 0: no messages */
+    int         intMsgLevel;                /**<  Message Level, 0: no messages */
     uint8_t*    uint8PtrMem;                /**<  Flash memory, allocated memory corresponds to flash size */
     uint32_t    uint32SelFlash;             /**<  Flash Type is selected */
     uint8_t     uint8StatusReg1;            /**<  Status Register */

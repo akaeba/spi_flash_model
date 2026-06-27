@@ -56,7 +56,7 @@ int main ()
     }
 
     /* enable advanced output */
-    spiFlash.uint8MsgLevel = 1;
+    spiFlash.intMsgLevel = 1;
 
     /* sfm_dump */
     printf("INFO:%s: sfm_dump\n", __FUNCTION__);
