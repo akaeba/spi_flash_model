@@ -22,6 +22,24 @@
 #define __SPI_FLASH_MODEL_H
 
 
+
+/**
+ *  @defgroup SFM_E
+ *  function exit codes
+ *  @{
+ */
+#define SFM_OK              (0)     /**< Request accepted */
+#define SFM_E_NO_FLASH      (1<<0)  /**< no flash type selected */
+#define SFM_E_MALLOC        (1<<1)  /**< memory allocation failed */
+#define SFM_E_ACCESS        (1<<2)  /**< access failed: adress out of range, file not found */
+#define SFM_E_IST_FLASH     (1<<3)  /**< Flash: malformed instruction */
+#define SFM_E_WP_FLASH      (1<<4)  /**< Flash: write protection active */
+#define SFM_E_WIP_FLASH     (1<<5)  /**< Flash: Write in progress, poll several times more the State register */
+#define SFM_E_CMP           (1<<6)  /**< compare error, mismatch */
+/** @} */   // SFM_E
+
+
+
 /**
  * @defgroup SFM_HELP constants
  *
@@ -99,14 +117,14 @@ typedef struct {
 /**
  *  @brief init
  *
- *  initializes spi flash model
+ *  initialises spi flash model
  *
  *  @param[in,out]  self                handle
  *  @param[in]      flashType           name of emulated flash, see #SPI_FLASH
  *  @return         int                 state
- *  @retval         0                   OKAY
- *  @retval         1                   non registered memory selected, add to #SPI_FLASH table
- *  @retval         2                   memory allocation failed
+ *  @retval         #SFM_OK             @see #SFM_E
+ *  @retval         #SFM_E_NO_FLASH     no memory selected or unknown, add to #SPI_FLASH table; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC       memory allocation failed; @see #SFM_E
  *  @since          2022-12-19
  *  @author         Andreas Kaeberlein
  */
@@ -123,10 +141,10 @@ int sfm_init (t_sfm *self, char flashType[]);
  *  @param[in]      start               start address of dump, aligned to 16byte, -1: default start
  *  @param[in]      stop                stop address of dump, aligned to 16byte, -1: default stop, end of flash
  *  @return         int                 state
- *  @retval         0                   OKAY
- *  @retval         1                   no flash selected
- *  @retval         2                   no memory to dump
- *  @retval         4                   provided addresses out of memory range
+ *  @retval         #SFM_OK             @see #SFM_E
+ *  @retval         #SFM_E_NO_FLASH     no memory selected or unknown, add to #SPI_FLASH table; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC       memory allocation failed; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS       provided addresses out of memory range; @see #SFM_E
  *  @since          2022-12-19
  *  @author         Andreas Kaeberlein
  */
@@ -142,11 +160,10 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop);
  *  @param[in,out]  self                handle
  *  @param[in]      fileName            file name for save
  *  @return         int                 state
- *  @retval         0                   OKAY
- *  @retval         1                   no flash selected
- *  @retval         2                   no memory allocated
- *  @retval         4                   no file name provided
- *  @retval         8                   failed to open file
+ *  @retval         #SFM_OK             @see #SFM_E
+ *  @retval         #SFM_E_NO_FLASH     no memory selected or unknown, add to #SPI_FLASH table; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC       memory allocation failed; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS       no file name provided, failed to open file; @see #SFM_E
  *  @since          2022-12-25
  *  @author         Andreas Kaeberlein
  */
@@ -162,11 +179,10 @@ int sfm_store (t_sfm *self, char fileName[]);
  *  @param[in,out]  self                handle
  *  @param[in]      fileName            file name for save
  *  @return         int                 state
- *  @retval         0                   OKAY
- *  @retval         1                   no flash selected
- *  @retval         2                   no memory allocated
- *  @retval         4                   no file name provided
- *  @retval         8                   failed to open file
+ *  @retval         #SFM_OK             @see #SFM_E
+ *  @retval         #SFM_E_NO_FLASH     no memory selected or unknown, add to #SPI_FLASH table; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC       memory allocation failed; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS       no file name provided, failed to open file; @see #SFM_E
  *  @since          2022-12-27
  *  @author         Andreas Kaeberlein
  */
@@ -177,17 +193,16 @@ int sfm_load (t_sfm *self, char fileName[]);
 /**
  *  @brief compare
  *
- *  compares file with flash meomory content
+ *  compares file with flash memory content
  *
  *  @param[in,out]  self                handle
  *  @param[in]      fileName            file name for save
  *  @return         int                 state
- *  @retval         0                   SFM and file matches
- *  @retval         1                   no flash selected
- *  @retval         2                   no memory allocated
- *  @retval         4                   no file name provided
- *  @retval         8                   failed to open file
- *  @retval         16                  ´mismatch file/sfm
+ *  @retval         #SFM_OK             @see #SFM_E
+ *  @retval         #SFM_E_NO_FLASH     no memory selected or unknown, add to #SPI_FLASH table; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC       memory allocation failed; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS       no file name provided, failed to open file; @see #SFM_E
+ *  @retval         16                  mismatch file/sfm
  *  @since          2022-12-28
  *  @author         Andreas Kaeberlein
  */
@@ -204,13 +219,13 @@ int sfm_cmp (t_sfm *self, char fileName[]);
  *  @param[in]      *spi                spi packet, request and response in same packet
  *  @param[in]      len                 spi packet length
  *  @return         int                 state
- *  @retval         0                   OKAY
- *  @retval         1                   no flash selected
- *  @retval         2                   no flash memory
- *  @retval         4                   unknown instruction
+ *  @retval         #SFM_OK             @see #SFM_E
+ *  @retval         #SFM_E_NO_FLASH     no memory selected or unknown, add to #SPI_FLASH table; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC       memory allocation failed; @see #SFM_E
+ *  @retval         #SFM_E_IST_FLASH    unknown instruction, malformed instruction; @see #SFM_E
  *  @retval         8                   conversion error
- *  @retval         16                  write enable bit not set
- *  @retval         32                  address out of range
+ *  @retval         #SFM_E_WP_FLASH     write enable bit not set; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS       address out of range; @see #SFM_E
  *  @since          2022-12-19
  *  @author         Andreas Kaeberlein
  */

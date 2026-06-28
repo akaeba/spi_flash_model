@@ -34,15 +34,15 @@
 
 /** @brief sfm_asciihex_to_uint8
  *
- *  converts ascii hex string to array of uint8 values
+ *  converts ASCII hex string to array of uint8 values
  *
  *  @param[in]      asciiHex        string for conversion
  *  @param[out]     *vals           to numbers converted string input
  *  @param[out]     *len            number of elements in *vals
  *  @param[in]      max             maximum number of elements in *vals
  *  @return         int             state
- *  @retval         0               OKAY
- *  @retval         -1              FAIL
+ *  @retval         #SFM_OK         OKAY; @see #SFM_E
+ *  @retval         #SFM_E_MALLOC   FAIL; @see #SFM_E
  *
  */
 static int sfm_asciihex_to_uint8 (const char asciiHex[], uint8_t* vals, uint32_t* len, uint32_t max)
@@ -54,7 +54,7 @@ static int sfm_asciihex_to_uint8 (const char asciiHex[], uint8_t* vals, uint32_t
     /* get length of converted string */
     if ( strlen(asciiHex) > max ) {
         printf("  ERROR:%s: not enough memory\n", __FUNCTION__);
-        return -1;
+        return SFM_E_MALLOC;
     }
     /* convert */
     *len = 0;
@@ -65,7 +65,7 @@ static int sfm_asciihex_to_uint8 (const char asciiHex[], uint8_t* vals, uint32_t
         vals[(*len)++] = (uint8_t) (val & 0xff);
     }
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -123,8 +123,8 @@ static uint8_t sfm_adr_digits (uint32_t adr)
  *  @param[in]      len             number of elements in buffer
  *  @param[in]      fileName[]      file name to file
  *  @return         int             state
- *  @retval         0               OKAY
- *  @retval         -1              FAIL
+ *  @retval         #SFM_OK         OKAY; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS   FAIL; @see #SFM_E
  *
  */
 static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
@@ -144,7 +144,7 @@ static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
     /* open file for write */
     fp = fopen(fileName, "w+");
     if ( NULL == fp ) {
-        return -1;  // failed to open for write
+        return SFM_E_ACCESS;    // failed to open for write
     }
     /* iterate over array in multiples of 16 */
     for ( i = 0; i < len; i += 16 ) {
@@ -169,7 +169,7 @@ static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
     }
     fclose(fp); // close file handle
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -182,8 +182,8 @@ static int sfm_write_dif (uint8_t *buf, uint32_t len, char fileName[])
  *  @param[in]      len             number of elements in buffer
  *  @param[in]      fileName[]      file name to file
  *  @return         int             state
- *  @retval         0               OKAY
- *  @retval         -1              FAIL
+ *  @retval         #SFM_OK         OKAY; @see #SFM_E
+ *  @retval         #SFM_E_ACCESS   FAIL; @see #SFM_E
  *
  */
 static int sfm_read_dif (uint8_t *buf, uint32_t len, char fileName[])
@@ -202,7 +202,7 @@ static int sfm_read_dif (uint8_t *buf, uint32_t len, char fileName[])
     /* open file for read */
     fp = fopen(fileName, "r");
     if ( NULL == fp ) {
-        return -1;  // failed to open for read
+        return SFM_E_ACCESS;    // failed to open for read
     }
     /* make given buffer empty */
     memset(buf, 0xff, len);
@@ -235,7 +235,7 @@ static int sfm_read_dif (uint8_t *buf, uint32_t len, char fileName[])
         }
     }
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -352,17 +352,17 @@ int sfm_init (t_sfm *self, char flashType[])
     }
     /* no memory found? */
     if ( NULL == self->flashType ) {
-        return 1;
+        return SFM_E_NO_FLASH;
     }
     /* allocate memory */
     self->uint8PtrMem = (uint8_t*) malloc(self->flashType->uint32FlashTopoTotalSizeByte);
     if ( NULL == self->uint8PtrMem ) {
-        return 2;   // memory allocation fail
+        return SFM_E_MALLOC;    // memory allocation fail
     }
     /* make memory empty */
     memset(self->uint8PtrMem, 0xff, self->flashType->uint32FlashTopoTotalSizeByte);
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -383,14 +383,14 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
 
     /* flash type selected */
     if ( NULL == self->flashType ) {
-        printf("  ERROR:%s: no flash selected\n", __FUNCTION__);
-        return 1;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); };
+        return SFM_E_NO_FLASH;;
     }
 
     /* memory allocated */
     if ( NULL == self->uint8PtrMem ) {
-        printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__);
-        return 2;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no memory for flash emulation allocated\n", __FUNCTION__); };
+        return SFM_E_MALLOC;
     }
 
     /* default args */
@@ -408,14 +408,14 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
          uint32Start > self->flashType->uint32FlashTopoTotalSizeByte - 1
     ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: flash address out of range\n", __FUNCTION__); }
-        return 4;
+        return SFM_E_ACCESS;
     }
 
     /* dump flash to console */
     sfm_hexdump_uint8 (self->uint8PtrMem, uint32Start, uint32Stop, "");
 
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -437,13 +437,13 @@ int sfm_store (t_sfm *self, char fileName[])
     /* flash type selected */
     if ( NULL == self->flashType ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
-        return 1;
+        return SFM_E_NO_FLASH;;
     }
 
     /* memory allocated */
     if ( NULL == self->uint8PtrMem ) {
-        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
-        return 2;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no memory for flash emulation allocated\n", __FUNCTION__); }
+        return SFM_E_MALLOC;
     }
 
     /* check desired file extension */
@@ -451,7 +451,7 @@ int sfm_store (t_sfm *self, char fileName[])
     /* no file extension */
     if ( !charPtrFileExt ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
-        return 4;
+        return SFM_E_ACCESS;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
@@ -464,17 +464,17 @@ int sfm_store (t_sfm *self, char fileName[])
                                 )
         ) {
             if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
-            return 8;
+            return SFM_E_ACCESS;
         }
 
     /* Unknown file extension */
     } else {
-        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsuppored file type '%s'\n", __FUNCTION__, charPtrFileExt); }
-        return 8;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
+        return SFM_E_ACCESS;
     }
 
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -482,7 +482,7 @@ int sfm_store (t_sfm *self, char fileName[])
 /**
  *  sfm_load
  *    loads file into flash
- *    .dif -> difference to empty flash, full initialized with 0xff
+ *    .dif -> difference to empty flash, full initialised with 0xff
  */
 int sfm_load (t_sfm *self, char fileName[])
 {
@@ -497,14 +497,14 @@ int sfm_load (t_sfm *self, char fileName[])
     /* flash type selected */
     if ( NULL == self->flashType ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
-        return 1;
+        return SFM_E_NO_FLASH;;
     }
 
     /* memory allocated */
     uint8PtrLdBuf = (uint8_t*) malloc(self->flashType->uint32FlashTopoTotalSizeByte);   // allocate intermediate buffer
     if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
-        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
-        return 2;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no memory for flash emulation allocated\n", __FUNCTION__); }
+        return SFM_E_MALLOC;
     }
 
     /* check desired file extension */
@@ -512,7 +512,7 @@ int sfm_load (t_sfm *self, char fileName[])
     /* no file extension */
     if ( !charPtrFileExt ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
-        return 4;
+        return SFM_E_ACCESS;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
@@ -525,20 +525,20 @@ int sfm_load (t_sfm *self, char fileName[])
                                )
         ) {
             if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
-            return 8;
+            return SFM_E_ACCESS;
         }
         /* write back to spi flash */
-        memcpy( self->uint8PtrMem, uint8PtrLdBuf, self->flashType->uint32FlashTopoTotalSizeByte);
+        memcpy( self->uint8PtrMem, uint8PtrLdBuf, self->flashType->uint32FlashTopoTotalSizeByte );
 
     /* Unknown file extension */
     } else {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
-        return 8;
+        return SFM_E_ACCESS;
     }
 
     /* finish function */
     free(uint8PtrLdBuf);
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -560,14 +560,14 @@ int sfm_cmp (t_sfm *self, char fileName[])
     /* flash type selected */
     if ( NULL == self->flashType ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
-        return 1;
+        return SFM_E_NO_FLASH;;
     }
 
     /* memory allocated */
     uint8PtrLdBuf = (uint8_t*) malloc(self->flashType->uint32FlashTopoTotalSizeByte);   // allocate intermediate buffer
     if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
-        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
-        return 2;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no memory for flash emulation allocated\n", __FUNCTION__); }
+        return SFM_E_MALLOC;
     }
 
     /* check desired file extension */
@@ -575,7 +575,7 @@ int sfm_cmp (t_sfm *self, char fileName[])
     /* no file extension */
     if ( !charPtrFileExt ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: No file name\n", __FUNCTION__); }
-        return 4;
+        return SFM_E_ACCESS;
 
     /* dif extension */
     } else if ( 0 == strcasecmp("dif", charPtrFileExt) ) {
@@ -588,13 +588,13 @@ int sfm_cmp (t_sfm *self, char fileName[])
                                )
         ) {
             if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: failed to open file '%s'\n", __FUNCTION__, fileName); }
-            return 8;
+            return SFM_E_ACCESS;
         }
 
     /* Unknown file extension */
     } else {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: unsupported file type '%s'\n", __FUNCTION__, charPtrFileExt); }
-        return 8;
+        return SFM_E_ACCESS;
     }
 
     /* compare memory content */
@@ -608,13 +608,13 @@ int sfm_cmp (t_sfm *self, char fileName[])
                 sfm_hexdump_uint8 (uint8PtrLdBuf, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, self->flashType->uint32FlashTopoTotalSizeByte), "    ");
                 free(uint8PtrLdBuf);    // free memory
             }
-            return 16;  // mismatch to file
+            return SFM_E_CMP;   // mismatch to file
         }
     }
 
     /* finish function */
     free(uint8PtrLdBuf);
-    return 0;
+    return SFM_OK;
 }
 
 
@@ -641,18 +641,18 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     /* flash type selected */
     if ( NULL == self->flashType) {
         printf("  ERROR:%s: no flash selected\n", __FUNCTION__);
-        return 1;
+        return SFM_E_NO_FLASH;;
     }
 
     /* memory allocated */
     if ( NULL == self->uint8PtrMem ) {
-        printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__);
-        return 2;
+        if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no memory for flash emulation allocated\n", __FUNCTION__); }
+        return SFM_E_MALLOC;
     }
 
     /* empty SPI packet */
     if ( 0 == len ) {
-        return 0;
+        return SFM_OK;
     }
 
     /* Read Manufacturer / Device ID */
@@ -667,14 +667,14 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Manufacturer / Device ID' instruction, expLen=%d, isLen=%d\n", __FUNCTION__, uint32ExpLen, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* convert to hex id */
-        if ( 0!= sfm_asciihex_to_uint8 (self->flashType->charFlashIdHex, hexId, &hexIdLen, sizeof(hexId)/sizeof(hexId[0])) ) {
+        if ( 0 != sfm_asciihex_to_uint8 (self->flashType->charFlashIdHex, hexId, &hexIdLen, sizeof(hexId)/sizeof(hexId[0])) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Convert %s\n", __FUNCTION__, self->flashType->charFlashIdHex);
             }
-            return 8;
+            return SFM_E_MALLOC;
         }
         /* response */
         spiCur = 0;
@@ -687,7 +687,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             spi[spiCur++] = hexId[i];
         }
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Write Enable (06h) */
     } else if ( spi[0] == self->flashType->uint8FlashIstWrEnable ) {
@@ -700,14 +700,14 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Write Enable' instruction, expLen=1, isLen=%d\n", __FUNCTION__, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* set write enable */
         self->uint8StatusReg1 |= self->flashType->uint8FlashMngWrEnaMsk;
         /* spi response */
         memset(spi, 0, len);
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Write Disable (04h) */
     } else if ( spi[0] == self->flashType->uint8FlashIstWrDisable ) {
@@ -720,14 +720,14 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Write Disable' instruction, expLen=1, isLen=%d\n", __FUNCTION__, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* clear write enable */
         self->uint8StatusReg1 &= (uint8_t) ~(self->flashType->uint8FlashMngWrEnaMsk);
         /* spi response */
         memset(spi, 0, len);
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Chip Erase */
     } else if ( spi[0] == self->flashType->uint8FlashIstEraseBulk ) {
@@ -740,21 +740,21 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Chip Erase' instruction, expLen=1, isLen=%d\n", __FUNCTION__, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* check for write enable */
         if ( 0 == (self->uint8StatusReg1 & self->flashType->uint8FlashMngWrEnaMsk) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Chip erase while write protection\n", __FUNCTION__);
             }
-            return 16;  // write protected
+            return SFM_E_WP_FLASH;  // write protected
         }
         /* Write in progress? */
         if ( 0 != self->uint8WipRdAfterWriteCnt ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
             }
-            return 32;  // Write in progress
+            return SFM_E_WIP_FLASH; // Write in progress
         }
         /* erase */
         memset(self->uint8PtrMem, 0xff, self->flashType->uint32FlashTopoTotalSizeByte);
@@ -765,7 +765,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         /* set wait for write in progres */
         self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Sector Erase */
     } else if ( spi[0] == self->flashType->uint8FlashIstEraseSector ) {
@@ -779,21 +779,21 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Sector Erase' instruction, expLen=%d, isLen=%d\n", __FUNCTION__, uint32ExpLen, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* check for write enable */
         if ( 0 == (self->uint8StatusReg1 & self->flashType->uint8FlashMngWrEnaMsk) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Sector erase while write protection\n", __FUNCTION__);
             }
-            return 16;  // write protected
+            return SFM_E_WP_FLASH;  // write protected
         }
         /* Write in progress? */
         if ( 0 != self->uint8WipRdAfterWriteCnt ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
             }
-            return 32;  // Write in progress
+            return SFM_E_WIP_FLASH; // Write in progress
         }
         /* assemble address */
         flashAdr = sfm_spi_to_adr (spi+1, self->flashType->uint8FlashTopoAdrBytes);      // spi packet to address
@@ -803,7 +803,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Address (0x%x) exceeds flash size (0x%x)\n", __FUNCTION__, flashAdr, self->flashType->uint32FlashTopoTotalSizeByte);
             }
-            return 32;  // address exceeds flash
+            return SFM_E_ACCESS;    // address exceeds flash
         }
         /* erase */
         memset(self->uint8PtrMem+flashAdr, 0xff, self->flashType->uint32FlashTopoSectorSizeByte);
@@ -814,7 +814,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         /* set wait for write in progres */
         self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Read Status Register-1 (05h) */
     } else if ( spi[0] == self->flashType->uint8FlashIstRdStateReg ) {
@@ -827,7 +827,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Status Register' instruction, expLen=2, isLen=%d\n", __FUNCTION__, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* state reg 1 has WIP flag */
         if ( 0 < self->uint8WipRdAfterWriteCnt ) {  // no write (erase/page programm) possible, more WIP polls are necessary
@@ -840,7 +840,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         spi[0] = 0;
         spi[1] = self->uint8StatusReg1;
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Read Data */
     } else if ( spi[0] == self->flashType->uint8FlashIstRdData ) {
@@ -853,7 +853,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Data' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, self->flashType->uint8FlashTopoAdrBytes + 1, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* spi packet to address */
         flashAdr = sfm_spi_to_adr (spi+1, self->flashType->uint8FlashTopoAdrBytes);
@@ -867,7 +867,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             flashAdr &= (uint32_t) (self->flashType->uint32FlashTopoTotalSizeByte - 1);  // address overoll
         }
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* Page Program */
     } else if ( spi[0] == self->flashType->uint8FlashIstWrPage ) {
@@ -880,21 +880,21 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Page Program' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, self->flashType->uint8FlashTopoAdrBytes + 1, len);
             }
-            return 4;   // malformed instruction
+            return SFM_E_IST_FLASH; // malformed instruction
         }
         /* check for write enable */
         if ( 0 == (self->uint8StatusReg1 & self->flashType->uint8FlashMngWrEnaMsk) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Page Program while write protection\n", __FUNCTION__);
             }
-            return 16;  // write protected
+            return SFM_E_WP_FLASH;  // write protected
         }
         /* Write in progress? */
         if ( 0 != self->uint8WipRdAfterWriteCnt ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: WIP still in progress, read %i times for write access\n", __FUNCTION__, self->uint8WipRdAfterWriteCnt);
             }
-            return 32;  // Write in progress
+            return SFM_E_WIP_FLASH; // Write in progress
         }
         /* spi packet to address */
         flashAdr     = sfm_spi_to_adr (spi+1, self->flashType->uint8FlashTopoAdrBytes);
@@ -913,16 +913,16 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         /* set wait for write in progres */
         self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;
         /* exit */
-        return 0;
+        return SFM_OK;
 
     /* default */
     } else {
         if ( 0 != self->intMsgLevel ) {
             printf("  ERROR:%s: Unknown Instruction '0x%02x'\n", __FUNCTION__, spi[0]);
         };
-        return 4;   // malformed instruction
+        return SFM_E_IST_FLASH; // malformed instruction
     }
 
     /* finish function */
-    return 0;
+    return SFM_OK;
 }
