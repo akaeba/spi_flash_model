@@ -330,7 +330,7 @@ static void sfm_hexdump_uint8 (uint8_t *data, uint32_t start, uint32_t stop, cha
 
 /**
  *  sfm_init
- *    initializes spi flash model handle
+ *    initialises spi flash model handle
  */
 int sfm_init (t_sfm *self, char flashType[])
 {
@@ -340,27 +340,27 @@ int sfm_init (t_sfm *self, char flashType[])
     /* init */
     self->intMsgLevel = 0;                  // no messages
     self->uint8PtrMem = NULL;               // not initialised
-    self->uint32SelFlash = (uint32_t) ~0;   // make invalid
+    self->flashType = NULL;                 // no  memory selected
     self->uint8StatusReg1 = 0;              // status register
     self->uint8WipRdAfterWriteCnt = 0;      // ready for write access
     /* determine SPI flash by name */
     for ( i = 0; i < sizeof(SPI_FLASH)/sizeof(SPI_FLASH[0]) - 1; i++ ) {
         if ( 0 == strcasecmp(flashType, SPI_FLASH[i].charFlashName) ) { // match
-            self->uint32SelFlash = i;
+            self->flashType = &SPI_FLASH[i];    // assign selected flash
             break;
         }
     }
-    /* found? */
-    if ( i >= (sizeof(SPI_FLASH)/sizeof(SPI_FLASH[0]) - 1) ) {
-        return 1;   // no memory found
+    /* no memory found? */
+    if ( NULL == self->flashType ) {
+        return 1;
     }
     /* allocate memory */
-    self->uint8PtrMem = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
+    self->uint8PtrMem = (uint8_t*) malloc(self->flashType->uint32FlashTopoTotalSizeByte);
     if ( NULL == self->uint8PtrMem ) {
         return 2;   // memory allocation fail
     }
     /* make memory empty */
-    memset(self->uint8PtrMem, 0xff, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
+    memset(self->uint8PtrMem, 0xff, self->flashType->uint32FlashTopoTotalSizeByte);
     /* finish function */
     return 0;
 }
@@ -382,7 +382,7 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
     if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
-    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+    if ( NULL == self->flashType ) {
         printf("  ERROR:%s: no flash selected\n", __FUNCTION__);
         return 1;
     }
@@ -400,12 +400,12 @@ int sfm_dump (t_sfm *self, int32_t start, int32_t stop)
         uint32Start = 0;
     }
     if ( 0 > stop ) {
-        uint32Stop = SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte;
+        uint32Stop = self->flashType->uint32FlashTopoTotalSizeByte;
     }
 
     /* inside address range */
-    if ( uint32Stop  > SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1 ||
-         uint32Start > SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1
+    if ( uint32Stop  > self->flashType->uint32FlashTopoTotalSizeByte - 1 ||
+         uint32Start > self->flashType->uint32FlashTopoTotalSizeByte - 1
     ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: flash address out of range\n", __FUNCTION__); }
         return 4;
@@ -435,7 +435,7 @@ int sfm_store (t_sfm *self, char fileName[])
     if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
-    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+    if ( NULL == self->flashType ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
@@ -459,7 +459,7 @@ int sfm_store (t_sfm *self, char fileName[])
         if ( 0 != self->intMsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
         /* File write */
         if ( 0 != sfm_write_dif ( self->uint8PtrMem,
-                                  SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
+                                  self->flashType->uint32FlashTopoTotalSizeByte,
                                   fileName
                                 )
         ) {
@@ -495,13 +495,13 @@ int sfm_load (t_sfm *self, char fileName[])
     if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
-    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+    if ( NULL == self->flashType ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
 
     /* memory allocated */
-    uint8PtrLdBuf = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);    // allocate intermediate buffer
+    uint8PtrLdBuf = (uint8_t*) malloc(self->flashType->uint32FlashTopoTotalSizeByte);   // allocate intermediate buffer
     if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
         return 2;
@@ -520,7 +520,7 @@ int sfm_load (t_sfm *self, char fileName[])
         if ( 0 != self->intMsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
         /* File read */
         if ( 0 != sfm_read_dif ( uint8PtrLdBuf,
-                                 SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
+                                 self->flashType->uint32FlashTopoTotalSizeByte,
                                  fileName
                                )
         ) {
@@ -528,7 +528,7 @@ int sfm_load (t_sfm *self, char fileName[])
             return 8;
         }
         /* write back to spi flash */
-        memcpy( self->uint8PtrMem, uint8PtrLdBuf, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
+        memcpy( self->uint8PtrMem, uint8PtrLdBuf, self->flashType->uint32FlashTopoTotalSizeByte);
 
     /* Unknown file extension */
     } else {
@@ -558,13 +558,13 @@ int sfm_cmp (t_sfm *self, char fileName[])
     if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
-    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+    if ( NULL == self->flashType ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash selected\n", __FUNCTION__); }
         return 1;
     }
 
     /* memory allocated */
-    uint8PtrLdBuf = (uint8_t*) malloc(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);    // allocate intermediate buffer
+    uint8PtrLdBuf = (uint8_t*) malloc(self->flashType->uint32FlashTopoTotalSizeByte);   // allocate intermediate buffer
     if ( (NULL == self->uint8PtrMem) || (NULL == uint8PtrLdBuf) ) {
         if ( 0 != self->intMsgLevel ) { printf("  ERROR:%s: no flash memory allocated\n", __FUNCTION__); }
         return 2;
@@ -583,7 +583,7 @@ int sfm_cmp (t_sfm *self, char fileName[])
         if ( 0 != self->intMsgLevel ) { printf("  INFO:%s: '.%s' file type used\n", __FUNCTION__, charPtrFileExt); }
         /* File read */
         if ( 0 != sfm_read_dif ( uint8PtrLdBuf,
-                                 SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte,
+                                 self->flashType->uint32FlashTopoTotalSizeByte,
                                  fileName
                                )
         ) {
@@ -598,14 +598,14 @@ int sfm_cmp (t_sfm *self, char fileName[])
     }
 
     /* compare memory content */
-    for ( uint32_t i = 0; i < SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte; i++ ) {
+    for ( uint32_t i = 0; i < self->flashType->uint32FlashTopoTotalSizeByte; i++ ) {
         if ( self->uint8PtrMem[i] != uint8PtrLdBuf[i] ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: mismatch at 0x%x: is=0x%02x, exp=0x%02x\n", __FUNCTION__, i, self->uint8PtrMem[i], uint8PtrLdBuf[i]);
                 printf("  ERROR:%s: IS dump\n", __FUNCTION__);
-                sfm_hexdump_uint8 (self->uint8PtrMem, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte), "    ");
+                sfm_hexdump_uint8 (self->uint8PtrMem, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, self->flashType->uint32FlashTopoTotalSizeByte), "    ");
                 printf("  ERROR:%s: EXP dump\n", __FUNCTION__);
-                sfm_hexdump_uint8 (uint8PtrLdBuf, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte), "    ");
+                sfm_hexdump_uint8 (uint8PtrLdBuf, sfm_subtract_uint32(i, 16), sfm_min_uint32(i+16, self->flashType->uint32FlashTopoTotalSizeByte), "    ");
                 free(uint8PtrLdBuf);    // free memory
             }
             return 16;  // mismatch to file
@@ -639,7 +639,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     if ( 0 != self->intMsgLevel ) { printf("__FUNCTION__ = %s\n", __FUNCTION__); };
 
     /* flash type selected */
-    if ( (uint32_t) ~0 == self->uint32SelFlash ) {
+    if ( NULL == self->flashType) {
         printf("  ERROR:%s: no flash selected\n", __FUNCTION__);
         return 1;
     }
@@ -656,13 +656,13 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
     }
 
     /* Read Manufacturer / Device ID */
-    if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdID ) {
+    if ( spi[0] == self->flashType->uint8FlashIstRdID ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Read Manufacturer / Device ID\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdID);
+            printf("  INFO:%s: IST=0x%02x, Read Manufacturer / Device ID\n", __FUNCTION__, self->flashType->uint8FlashIstRdID);
         }
         /* check length */
-        uint32ExpLen = (uint32_t) (1 + SPI_FLASH[self->uint32SelFlash].uint8FlashTopoRdIdDummyByte + (int) strlen(SPI_FLASH[self->uint32SelFlash].charFlashIdHex)/2);
+        uint32ExpLen = (uint32_t) (1 + self->flashType->uint8FlashTopoRdIdDummyByte + (int) strlen(self->flashType->charFlashIdHex)/2);
         if ( len != uint32ExpLen ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Read Manufacturer / Device ID' instruction, expLen=%d, isLen=%d\n", __FUNCTION__, uint32ExpLen, len);
@@ -670,16 +670,16 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 4;   // malformed instruction
         }
         /* convert to hex id */
-        if ( 0!= sfm_asciihex_to_uint8 (SPI_FLASH[self->uint32SelFlash].charFlashIdHex, hexId, &hexIdLen, sizeof(hexId)/sizeof(hexId[0])) ) {
+        if ( 0!= sfm_asciihex_to_uint8 (self->flashType->charFlashIdHex, hexId, &hexIdLen, sizeof(hexId)/sizeof(hexId[0])) ) {
             if ( 0 != self->intMsgLevel ) {
-                printf("  ERROR:%s: Convert %s\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].charFlashIdHex);
+                printf("  ERROR:%s: Convert %s\n", __FUNCTION__, self->flashType->charFlashIdHex);
             }
             return 8;
         }
         /* response */
         spiCur = 0;
         spi[spiCur++] = 0;  // first assign and then increment
-        for ( i = 0; i < SPI_FLASH[self->uint32SelFlash].uint8FlashTopoRdIdDummyByte; i++ ) {
+        for ( i = 0; i < self->flashType->uint8FlashTopoRdIdDummyByte; i++ ) {
             spi[spiCur++] = 0;
         }
         /* copy hex values */
@@ -690,10 +690,10 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         return 0;
 
     /* Write Enable (06h) */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrEnable ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstWrEnable ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Write Enable\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrEnable);
+            printf("  INFO:%s: IST=0x%02x, Write Enable\n", __FUNCTION__, self->flashType->uint8FlashIstWrEnable);
         }
         /* check length */
         if ( 1 != len ) {
@@ -703,17 +703,17 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 4;   // malformed instruction
         }
         /* set write enable */
-        self->uint8StatusReg1 |= SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk;
+        self->uint8StatusReg1 |= self->flashType->uint8FlashMngWrEnaMsk;
         /* spi response */
         memset(spi, 0, len);
         /* exit */
         return 0;
 
     /* Write Disable (04h) */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrDisable ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstWrDisable ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Write Disable\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrDisable);
+            printf("  INFO:%s: IST=0x%02x, Write Disable\n", __FUNCTION__, self->flashType->uint8FlashIstWrDisable);
         }
         /* check length */
         if ( 1 != len ) {
@@ -723,17 +723,17 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 4;   // malformed instruction
         }
         /* clear write enable */
-        self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk);
+        self->uint8StatusReg1 &= (uint8_t) ~(self->flashType->uint8FlashMngWrEnaMsk);
         /* spi response */
         memset(spi, 0, len);
         /* exit */
         return 0;
 
     /* Chip Erase */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseBulk ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstEraseBulk ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Chip Erase\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseBulk);
+            printf("  INFO:%s: IST=0x%02x, Chip Erase\n", __FUNCTION__, self->flashType->uint8FlashIstEraseBulk);
         }
         /* check length */
         if ( 1 != len ) {
@@ -743,7 +743,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 4;   // malformed instruction
         }
         /* check for write enable */
-        if ( 0 == (self->uint8StatusReg1 & SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk) ) {
+        if ( 0 == (self->uint8StatusReg1 & self->flashType->uint8FlashMngWrEnaMsk) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Chip erase while write protection\n", __FUNCTION__);
             }
@@ -757,9 +757,9 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 32;  // Write in progress
         }
         /* erase */
-        memset(self->uint8PtrMem, 0xff, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
+        memset(self->uint8PtrMem, 0xff, self->flashType->uint32FlashTopoTotalSizeByte);
         /* clear write enable */
-        self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk);
+        self->uint8StatusReg1 &= (uint8_t) ~(self->flashType->uint8FlashMngWrEnaMsk);
         /* spi response */
         memset(spi, 0, len);
         /* set wait for write in progres */
@@ -768,13 +768,13 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         return 0;
 
     /* Sector Erase */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseSector ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstEraseSector ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Sector Erase\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstEraseSector);
+            printf("  INFO:%s: IST=0x%02x, Sector Erase\n", __FUNCTION__, self->flashType->uint8FlashIstEraseSector);
         }
         /* check length */
-        uint32ExpLen = (uint32_t) (1 + SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);
+        uint32ExpLen = (uint32_t) (1 + self->flashType->uint8FlashTopoAdrBytes);
         if ( uint32ExpLen != len ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Malformed 'Sector Erase' instruction, expLen=%d, isLen=%d\n", __FUNCTION__, uint32ExpLen, len);
@@ -782,7 +782,7 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 4;   // malformed instruction
         }
         /* check for write enable */
-        if ( 0 == (self->uint8StatusReg1 & SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk) ) {
+        if ( 0 == (self->uint8StatusReg1 & self->flashType->uint8FlashMngWrEnaMsk) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Sector erase while write protection\n", __FUNCTION__);
             }
@@ -796,19 +796,19 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 32;  // Write in progress
         }
         /* assemble address */
-        flashAdr = sfm_spi_to_adr (spi+1, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);      // spi packet to address
-        flashAdr &= (uint32_t) ~(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoSectorSizeByte - 1);    // allign to sector
+        flashAdr = sfm_spi_to_adr (spi+1, self->flashType->uint8FlashTopoAdrBytes);      // spi packet to address
+        flashAdr &= (uint32_t) ~(self->flashType->uint32FlashTopoSectorSizeByte - 1);    // align to sector
         /* in memory? */
-        if ( SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte < flashAdr + SPI_FLASH[self->uint32SelFlash].uint32FlashTopoSectorSizeByte ) {
+        if ( self->flashType->uint32FlashTopoTotalSizeByte < flashAdr + self->flashType->uint32FlashTopoSectorSizeByte ) {
             if ( 0 != self->intMsgLevel ) {
-                printf("  ERROR:%s: Address (0x%x) exceeds flash size (0x%x)\n", __FUNCTION__, flashAdr, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte);
+                printf("  ERROR:%s: Address (0x%x) exceeds flash size (0x%x)\n", __FUNCTION__, flashAdr, self->flashType->uint32FlashTopoTotalSizeByte);
             }
             return 32;  // address exceeds flash
         }
         /* erase */
-        memset(self->uint8PtrMem+flashAdr, 0xff, SPI_FLASH[self->uint32SelFlash].uint32FlashTopoSectorSizeByte);
+        memset(self->uint8PtrMem+flashAdr, 0xff, self->flashType->uint32FlashTopoSectorSizeByte);
         /* clear write enable */
-        self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk);
+        self->uint8StatusReg1 &= (uint8_t) ~(self->flashType->uint8FlashMngWrEnaMsk);
         /* spi response */
         memset(spi, 0, len);
         /* set wait for write in progres */
@@ -817,10 +817,10 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         return 0;
 
     /* Read Status Register-1 (05h) */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdStateReg ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstRdStateReg ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Read Status Register\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdStateReg);
+            printf("  INFO:%s: IST=0x%02x, Read Status Register\n", __FUNCTION__, self->flashType->uint8FlashIstRdStateReg);
         }
         /* check length */
         if ( 2 != len ) {
@@ -832,9 +832,9 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         /* state reg 1 has WIP flag */
         if ( 0 < self->uint8WipRdAfterWriteCnt ) {  // no write (erase/page programm) possible, more WIP polls are necessary
             --(self->uint8WipRdAfterWriteCnt);
-            self->uint8StatusReg1 |= (uint8_t) (SPI_FLASH[self->uint32SelFlash].uint8FlashMngWipMsk);   // set WIP
+            self->uint8StatusReg1 |= (uint8_t) (self->flashType->uint8FlashMngWipMsk);  // set WIP
         } else {    // no WIP
-            self->uint8StatusReg1 &= (uint8_t) ~(SPI_FLASH[self->uint32SelFlash].uint8FlashMngWipMsk);  // clear WIP flag
+            self->uint8StatusReg1 &= (uint8_t) ~(self->flashType->uint8FlashMngWipMsk); // clear WIP flag
         }
         /* response */
         spi[0] = 0;
@@ -843,47 +843,47 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
         return 0;
 
     /* Read Data */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdData ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstRdData ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Read Data\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstRdData);
+            printf("  INFO:%s: IST=0x%02x, Read Data\n", __FUNCTION__, self->flashType->uint8FlashIstRdData);
         }
         /* check length */
-        if ( len < (uint32_t) (SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1)) {
+        if ( len < (uint32_t) (self->flashType->uint8FlashTopoAdrBytes + 1)) {
             if ( 0 != self->intMsgLevel ) {
-                printf("  ERROR:%s: Malformed 'Read Data' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1, len);
+                printf("  ERROR:%s: Malformed 'Read Data' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, self->flashType->uint8FlashTopoAdrBytes + 1, len);
             }
             return 4;   // malformed instruction
         }
         /* spi packet to address */
-        flashAdr = sfm_spi_to_adr (spi+1, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);
+        flashAdr = sfm_spi_to_adr (spi+1, self->flashType->uint8FlashTopoAdrBytes);
         /* clear start of spi packet */
-        spiCur = (uint32_t) SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1;
+        spiCur = (uint32_t) self->flashType->uint8FlashTopoAdrBytes + 1;
         memset(spi, 0, (size_t) spiCur);
         /* fetch out the data */
         for ( i = spiCur; i < len; i++ ) {
             spi[spiCur++] = self->uint8PtrMem[flashAdr];
             flashAdr++;
-            flashAdr &= (uint32_t) (SPI_FLASH[self->uint32SelFlash].uint32FlashTopoTotalSizeByte - 1);  // address overoll
+            flashAdr &= (uint32_t) (self->flashType->uint32FlashTopoTotalSizeByte - 1);  // address overoll
         }
         /* exit */
         return 0;
 
     /* Page Program */
-    } else if ( spi[0] == SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrPage ) {
+    } else if ( spi[0] == self->flashType->uint8FlashIstWrPage ) {
         /* entry message */
         if ( 0 != self->intMsgLevel ) {
-            printf("  INFO:%s: IST=0x%02x, Page Program\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashIstWrPage);
+            printf("  INFO:%s: IST=0x%02x, Page Program\n", __FUNCTION__, self->flashType->uint8FlashIstWrPage);
         }
         /* check length */
-        if ( len < (uint32_t) (SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1)) {
+        if ( len < (uint32_t) (self->flashType->uint8FlashTopoAdrBytes + 1)) {
             if ( 0 != self->intMsgLevel ) {
-                printf("  ERROR:%s: Malformed 'Page Program' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1, len);
+                printf("  ERROR:%s: Malformed 'Page Program' instruction, expLen>%d, isLen=%d\n", __FUNCTION__, self->flashType->uint8FlashTopoAdrBytes + 1, len);
             }
             return 4;   // malformed instruction
         }
         /* check for write enable */
-        if ( 0 == (self->uint8StatusReg1 & SPI_FLASH[self->uint32SelFlash].uint8FlashMngWrEnaMsk) ) {
+        if ( 0 == (self->uint8StatusReg1 & self->flashType->uint8FlashMngWrEnaMsk) ) {
             if ( 0 != self->intMsgLevel ) {
                 printf("  ERROR:%s: Page Program while write protection\n", __FUNCTION__);
             }
@@ -897,18 +897,18 @@ int sfm (t_sfm *self, uint8_t* spi, uint32_t len)
             return 32;  // Write in progress
         }
         /* spi packet to address */
-        flashAdr     = sfm_spi_to_adr (spi+1, SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes);
+        flashAdr     = sfm_spi_to_adr (spi+1, self->flashType->uint8FlashTopoAdrBytes);
         flashAdrBase = flashAdr;
-        flashAdrBase &= (uint32_t) ~(SPI_FLASH[self->uint32SelFlash].uint32FlashTopoPageSizeByte - 1);  // base address, aligned to pages
-        flashAdr     &= (uint32_t) SPI_FLASH[self->uint32SelFlash].uint32FlashTopoPageSizeByte - 1;     // in page address
+        flashAdrBase &= (uint32_t) ~(self->flashType->uint32FlashTopoPageSizeByte - 1);  // base address, aligned to pages
+        flashAdr     &= (uint32_t) self->flashType->uint32FlashTopoPageSizeByte - 1;     // in page address
         /* clear start of spi packet */
-        spiCur = (uint32_t) SPI_FLASH[self->uint32SelFlash].uint8FlashTopoAdrBytes + 1;
+        spiCur = (uint32_t) self->flashType->uint8FlashTopoAdrBytes + 1;
         memset(spi, 0, (size_t) spiCur);
         /* page write */
         for ( i = spiCur; i < len; i++ ) {
             self->uint8PtrMem[flashAdrBase+flashAdr] &= spi[i]; // in flash can only bits swapped from 1s -> 0s, otherwise erase
             flashAdr++;
-            flashAdr &= (uint32_t) SPI_FLASH[self->uint32SelFlash].uint32FlashTopoPageSizeByte - 1; // page overroll
+            flashAdr &= (uint32_t) self->flashType->uint32FlashTopoPageSizeByte - 1; // page overroll
         }
         /* set wait for write in progres */
         self->uint8WipRdAfterWriteCnt = SFM_WIP_RETRY_IDLE;

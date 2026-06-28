@@ -87,11 +87,11 @@ typedef struct t_sfm_type {
  *  @author Andreas Kaeberlein
  */
 typedef struct {
-    int         intMsgLevel;                /**<  Message Level, 0: no messages */
-    uint8_t*    uint8PtrMem;                /**<  Flash memory, allocated memory corresponds to flash size */
-    uint32_t    uint32SelFlash;             /**<  Flash Type is selected */
-    uint8_t     uint8StatusReg1;            /**<  Status Register */
-    uint8_t     uint8WipRdAfterWriteCnt;    /**<  Number of WIP Flag Reads until new write i spossible, emulates timing behaviour of flash */
+    int                 intMsgLevel;                /**<  Message Level, 0: no messages */
+    uint8_t*            uint8PtrMem;                /**<  Flash memory, allocated memory corresponds to flash size */
+    const t_sfm_type*   flashType;                  /**<  Flash type */
+    uint8_t             uint8StatusReg1;            /**<  Status Register */
+    uint8_t             uint8WipRdAfterWriteCnt;    /**<  Number of WIP Flag Reads until new write i spossible, emulates timing behaviour of flash */
 } t_sfm;
 
 
